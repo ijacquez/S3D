@@ -63,34 +63,26 @@ namespace S3D.Converters {
             return _objNameToGroupDict.Keys.ToArray();
         }
 
-        protected override Vector3[] GetVertices(string objectID) {
+        protected override Vector3?[] GetVertexMap(string objectID) {
             ObjGroup objGroup = _objNameToGroupDict[objectID];
 
-            Vector3[] vertices = new Vector3[_objFile.Vertices.Count];
+            Vector3?[] vertexMap = new Vector3?[_objFile.Vertices.Count];
 
             // Vertices are stored in sequential order for all groups
             IList<ObjVertex> objVertices = _objFile.Vertices;
-
-            // Find what the max vertex index is and used that to determine the
-            // number of vertices this object is using
-            int maxVertexIndex = 0;
 
             foreach (ObjFace objFace in objGroup.Faces) {
                 int[] vertexIndices = GetVertexIndices(objFace);
 
                 foreach (int vertexIndex in vertexIndices) {
-                    maxVertexIndex = Math.Max(vertexIndex, maxVertexIndex);
-
                     ObjVector4 position = objVertices[vertexIndex].Position;
                     Vector3 vertex = TransformVertex(Conversions.ToVector3(position));
 
-                    vertices[vertexIndex] = vertex;
+                    vertexMap[vertexIndex] = vertex;
                 }
             }
 
-            Array.Resize(ref vertices, maxVertexIndex + 1);
-
-            return vertices;
+            return vertexMap;
         }
 
         protected override Vector3[] GetVertexNormals(string objectID) {

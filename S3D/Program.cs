@@ -116,6 +116,9 @@ namespace S3D {
                     foreach (S3DObjectContext objectContext in objectContexts) {
                         // XPDATA (extended)
                         NewMethod8(binaryWriter, objectContext);
+                    }
+
+                    foreach (S3DObjectContext objectContext in objectContexts) {
                         // pntbl
                         NewMethod0(binaryWriter, objectContext);
                         // pltbl
@@ -124,33 +127,29 @@ namespace S3D {
                         NewMethod2(binaryWriter, objectContext, context);
                         // vntbl
                         NewMethod3(binaryWriter, objectContext);
-                        // Gouraud shading tables
-                        NewMethod4(binaryWriter, objectContext);
                         // PICTUREs
                         NewMethod5(binaryWriter, objectContext, context);
+                        // Gouraud shading tables
+                        NewMethod4(binaryWriter, objectContext);
                     }
 
-                    // TEXTUREs (global, shared)
-                    binaryWriter.WriteReferenceOffset(textureBaseReference);
-
-                    NewMethod6(binaryWriter, context);
-
-                    // Texture data (global, shared)
                     if (textureManager.UniqueTextures.Count > 0) {
-                        binaryWriter.WriteReferenceOffset(textureDataBaseReference);
+                        // TEXTUREs (global, shared)
+                        binaryWriter.WriteReferenceOffset(textureBaseReference);
+                        NewMethod6(binaryWriter, context);
 
+                        // Texture data (global, shared)
+                        binaryWriter.WriteReferenceOffset(textureDataBaseReference);
                         NewMethod7(binaryWriter, context);
                     }
 
-                    // PALETTEs (global, shared)
-                    binaryWriter.WriteReferenceOffset(paletteBaseReference);
-
-                    NewMethod10(binaryWriter, context);
-
-                    // Palette data (global, shared)
                     if (paletteManager.UniquePalettes.Count > 0) {
-                        binaryWriter.WriteReferenceOffset(paletteDataBaseReference);
+                        // PALETTEs (global, shared)
+                        binaryWriter.WriteReferenceOffset(paletteBaseReference);
+                        NewMethod10(binaryWriter, context);
 
+                        // Palette data (global, shared)
+                        binaryWriter.WriteReferenceOffset(paletteDataBaseReference);
                         NewMethod9(binaryWriter, context);
                     }
 
@@ -212,15 +211,13 @@ namespace S3D {
             //   void *   PICTURE data        4B offset
             objectContext.PicturesReference = binaryWriter.WriteDeferredReference();
             //   Uint32   PICTURE count       4B
-            int pictureCount = objectContext.Object.Faces.Where((face) => face.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseTexture)).Count();
-            binaryWriter.WriteUInt32(pictureCount);
+            binaryWriter.WriteUInt32(objectContext.Object.PictureCount);
 
             //   void *   Gouraud tables      4B offset
             objectContext.GouraudShadingTablesReference = binaryWriter.WriteDeferredReference();
 
             //   Uint16   Gouraud tables size 4B
-            int gouraudShadingTableCount = objectContext.Object.Faces.Where((face) => face.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseGouraudShading)).Count();
-            binaryWriter.WriteUInt32(gouraudShadingTableCount);
+            binaryWriter.WriteUInt32(objectContext.Object.GouraudShadingCount);
         }
 
         private static void NewMethod7(S3DBinaryWriter binaryWriter, Context context) {
@@ -255,7 +252,6 @@ namespace S3D {
 
         private static void NewMethod6(S3DBinaryWriter binaryWriter, Context context) {
             foreach (ITexture texture in context.TextureManager.UniqueTextures) {
-
                 //   Uint16 Hsize  2B width
                 binaryWriter.WriteUInt16((UInt16)texture.VDP1Data.Width);
                 //   Uint16 Vsize  2B height
@@ -267,6 +263,10 @@ namespace S3D {
         }
 
         private static void NewMethod5(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext, Context context) {
+            if (objectContext.Object.PictureCount == 0) {
+                return;
+            }
+
             binaryWriter.WriteReferenceOffset(objectContext.PicturesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {
@@ -289,6 +289,10 @@ namespace S3D {
         }
 
         private static void NewMethod4(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+            if (objectContext.Object.GouraudShadingCount == 0) {
+                return;
+            }
+
             binaryWriter.WriteReferenceOffset(objectContext.GouraudShadingTablesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {

@@ -1,8 +1,10 @@
+using S3D.TextureConverters;
 using S3D.TextureManagement;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Numerics;
 using System;
-using S3D.TextureConverters;
 
 namespace S3D.Converters {
     public abstract class S3DConverter : IDisposable {
@@ -23,21 +25,40 @@ namespace S3D.Converters {
             string[] objectIDs = GetObjectIDs();
             S3DObject[] s3dObjects = new S3DObject[objectIDs.Length];
 
-            for (int i = 0; i < s3dObjects.Length; i++) {
-                string objectID = objectIDs[i];
+            for (int index = 0; index < s3dObjects.Length; index++) {
+                string objectID = objectIDs[index];
                 S3DObject s3dObject = new S3DObject();
 
                 s3dObject.Name = objectID;
 
-                s3dObject.Vertices.AddRange(GetVertices(objectID));
+                int[] indices = GetIndices(objectID);
+                int[] normalizedIndices = CalculateNormalizedIndices(indices);
+
+                Vector3?[] vertexMap = GetVertexMap(objectID);
+                Vector3[] normalizedVertices = new Vector3[normalizedIndices.Length];
+
+                for (int i = 0; i < normalizedIndices.Length; i++) {
+                    normalizedVertices[normalizedIndices[i]] = vertexMap[indices[i]].Value;
+                }
+
+                s3dObject.Vertices.AddRange(normalizedVertices);
+
                 s3dObject.VertexNormals.AddRange(GetVertexNormals(objectID));
 
-                for (int faceIndex = 0; faceIndex < GetFaceCount(objectID); faceIndex++) {
+                int indicesIndex = 0;
+
+                int faceCount = GetFaceCount(objectID);
+
+                for (int faceIndex = 0; faceIndex < faceCount; faceIndex++) {
                     S3DFace s3dFace = new S3DFace();
 
-                    Array.Copy(GetFaceIndices(objectID, faceIndex),
+                    Array.Copy(normalizedIndices,
+                               indicesIndex,
                                s3dFace.Indices,
+                               0,
                                s3dFace.Indices.Length);
+
+                    indicesIndex += s3dFace.Indices.Length;
 
                     // Check for gouraud shading
                     if (TryGetFaceColors(objectID, faceIndex, out Color[] colors)) {
@@ -106,7 +127,7 @@ namespace S3D.Converters {
                     s3dObject.Faces.Add(s3dFace);
                 }
 
-                s3dObjects[i] = s3dObject;
+                s3dObjects[index] = s3dObject;
             }
 
             return s3dObjects;
@@ -114,7 +135,7 @@ namespace S3D.Converters {
 
         protected abstract string[] GetObjectIDs();
 
-        protected abstract Vector3[] GetVertices(string objectID);
+        protected abstract Vector3?[] GetVertexMap(string objectID);
 
         protected abstract Vector3[] GetVertexNormals(string objectID);
 
@@ -131,14 +152,6 @@ namespace S3D.Converters {
         protected abstract bool TryGetFaceTextureVertices(string objectID, int faceIndex, out Vector2[] uvs);
 
         protected abstract bool TryGetFaceTexturePath(string objectID, int faceIndex, out string texturePath);
-
-        private static Vector3 CalculateNormal(Vector3[] vertices) {
-            Vector3 uVector = Vector3.Normalize(vertices[3] - vertices[2]);
-            Vector3 vVector = Vector3.Normalize(vertices[1] - vertices[2]);
-            Vector3 normal = Vector3.Cross(uVector, vVector);
-
-            return normal;
-        }
 
         protected abstract void DisposeManaged();
 
@@ -166,6 +179,54 @@ namespace S3D.Converters {
             Dispose(disposing: true);
 
             GC.SuppressFinalize(this);
+        }
+
+        private int[] GetIndices(string objectID) {
+            int faceCount = GetFaceCount(objectID);
+
+            int[] indices = new int[4 * faceCount];
+
+            for (int faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+                int[] faceIndices = GetFaceIndices(objectID, faceIndex);
+
+                Array.Copy(faceIndices,
+                           0,
+                           indices,
+                           faceIndex * faceIndices.Length,
+                           faceIndices.Length);
+            }
+
+            return indices;
+        }
+
+        private int[] CalculateNormalizedIndices(int[] indices) {
+            int[] normalizedIndices = new int[indices.Length];
+
+            Array.Fill(normalizedIndices, -1);
+
+            for (int i = 0, index = 0; i < indices.Length; i++) {
+                if (normalizedIndices[i] >= 0) {
+                    continue;
+                }
+
+                for (int j = 0; j < indices.Length; j++) {
+                    if (indices[i] == indices[j]) {
+                        normalizedIndices[j] = index;
+                    }
+                }
+
+                index++;
+            }
+
+            return normalizedIndices.ToArray();
+        }
+
+        private static Vector3 CalculateNormal(Vector3[] vertices) {
+            Vector3 uVector = Vector3.Normalize(vertices[3] - vertices[2]);
+            Vector3 vVector = Vector3.Normalize(vertices[1] - vertices[2]);
+            Vector3 normal = Vector3.Cross(uVector, vVector);
+
+            return normal;
         }
     }
 }
