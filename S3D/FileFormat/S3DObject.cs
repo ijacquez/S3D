@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace S3D {
+namespace S3D.FileFormats {
     public class S3DObject {
         private int _gouraudShadingNumber;
 

@@ -1,5 +1,5 @@
 namespace S3D.TextureConverters {
-    public enum TextureType {
+    public enum VDP1DataType {
         Invalid = -1,
         Indexed16,
         Indexed64,

@@ -1,7 +1,8 @@
 using System.Numerics;
 using System.Drawing;
+using S3D.TextureManagement;
 
-namespace S3D {
+namespace S3D.FileFormats {
     public class S3DFace {
         public int[] Indices { get; } = new int[4];
 
@@ -9,7 +10,9 @@ namespace S3D {
 
         public Color[] GouraudShadingColors { get; } = new Color[4];
 
-        public int GouraudingShadingNumber { get; set; }
+        public int GouraudShadingNumber { get; set; }
+
+        public IPicture Picture { get; set; }
 
         public S3DFaceAttribs.FeatureFlags FeatureFlags { get; set; }
 

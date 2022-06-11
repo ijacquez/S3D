@@ -5,7 +5,7 @@ using System;
 
 namespace S3D.TextureConverters {
     public class VDP1Data {
-        public TextureType Type { get; }
+        public VDP1DataType Type { get; }
 
         public byte[] Data { get; }
 
@@ -18,7 +18,7 @@ namespace S3D.TextureConverters {
         private VDP1Data() {
         }
 
-        public VDP1Data(TextureType type, int width, int height, byte[] data, IEnumerable<RGB1555> palette) {
+        public VDP1Data(VDP1DataType type, int width, int height, byte[] data, IEnumerable<RGB1555> palette) {
             Type = type;
             Width = width;
             Height = height;
@@ -26,7 +26,7 @@ namespace S3D.TextureConverters {
 
             // If the texture type is indexed, copy (and pad if needed) the
             // palette
-            if (type != TextureType.RGB1555) {
+            if (type != VDP1DataType.RGB1555) {
                 int paletteColorCount = GetPaletteColorCount(type);
 
                 Palette = new RGB1555[paletteColorCount];
@@ -37,17 +37,17 @@ namespace S3D.TextureConverters {
             }
         }
 
-        private static int GetPaletteColorCount(TextureType type) {
+        private static int GetPaletteColorCount(VDP1DataType type) {
             switch (type) {
-                case TextureType.Indexed16:
+                case VDP1DataType.Indexed16:
                     return 16;
-                case TextureType.Indexed64:
+                case VDP1DataType.Indexed64:
                     return 64;
-                case TextureType.Indexed128:
+                case VDP1DataType.Indexed128:
                     return 128;
-                case TextureType.Indexed256:
+                case VDP1DataType.Indexed256:
                     return 256;
-                case TextureType.RGB1555:
+                case VDP1DataType.RGB1555:
                 default:
                     return 0;
             }

@@ -7,15 +7,15 @@ using S3D.Utilities;
 using System.Drawing.Imaging;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System;
-using System.Linq;
 
 namespace S3D.TextureConverters {
-    public static class TextureConverter {
-        private static int _TextureConversionIndex = 0;
+    public static class VDP1DataConverter {
+        private static int _ConversionIndex = 0;
 
-        public static VDP1Data ToTexture(string fileName, TextureConverterParameters parameters) {
+        public static VDP1Data ToVDP1Data(string fileName, TextureConverterParameters parameters) {
             Image image = Image.FromFile(fileName);
 
             var sanitizedParameters = new TextureConverterParameters(parameters);
@@ -85,14 +85,14 @@ namespace S3D.TextureConverters {
             Bitmap bitmap = (Bitmap)image;
 
             Bitmap generatedBitmap = GenerateBitmap(bitmap, parameters);
-            byte[] textureBytes = ConvertToSaturn15BPPIndexed(generatedBitmap, parameters);
+            byte[] bytes = ConvertToSaturn15BPPIndexed(generatedBitmap, parameters);
 
             DumpIntermediateFiles(generatedBitmap, parameters);
 
-            return new VDP1Data(TextureType.RGB1555,
+            return new VDP1Data(VDP1DataType.RGB1555,
                                 parameters.TargetWidth,
                                 parameters.TargetHeight,
-                                textureBytes,
+                                bytes,
                                 null);
         }
 
@@ -105,7 +105,7 @@ namespace S3D.TextureConverters {
 
             DumpIntermediateFiles(generatedBitmap, parameters);
 
-            return new VDP1Data(TextureType.Indexed16,
+            return new VDP1Data(VDP1DataType.Indexed16,
                                 parameters.TargetWidth,
                                 parameters.TargetHeight,
                                 textureBytes,
@@ -116,25 +116,25 @@ namespace S3D.TextureConverters {
             Bitmap bitmap = (Bitmap)image;
 
             Bitmap generatedBitmap = GenerateBitmap(bitmap, parameters);
-            byte[] textureBytes = ConvertToSaturn8BPPIndexed(generatedBitmap, parameters);
+            byte[] bytes = ConvertToSaturn8BPPIndexed(generatedBitmap, parameters);
             RGB1555[] palette = ConvertToRGB1555Palette(ExtractPalette(generatedBitmap.Palette));
 
             DumpIntermediateFiles(generatedBitmap, parameters);
 
-            TextureType textureType;
+            VDP1DataType type;
 
             if (palette.Length == 64) {
-                textureType = TextureType.Indexed64;
+                type = VDP1DataType.Indexed64;
             } else if (palette.Length == 128) {
-                textureType = TextureType.Indexed128;
+                type = VDP1DataType.Indexed128;
             } else {
-                textureType = TextureType.Indexed256;
+                type = VDP1DataType.Indexed256;
             }
 
-            return new VDP1Data(textureType,
+            return new VDP1Data(type,
                                 parameters.TargetWidth,
                                 parameters.TargetHeight,
-                                textureBytes,
+                                bytes,
                                 palette);
         }
 
@@ -145,9 +145,9 @@ namespace S3D.TextureConverters {
                 return;
             }
 
-            writeBitmap.SaveAsPng($"out_{_TextureConversionIndex:D04}.png");
+            writeBitmap.SaveAsPng($"out_{_ConversionIndex:D04}.png");
 
-            _TextureConversionIndex++;
+            _ConversionIndex++;
         }
 
         #endregion

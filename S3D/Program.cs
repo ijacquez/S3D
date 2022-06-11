@@ -1,4 +1,6 @@
 using S3D.Converters;
+using S3D.FileFormats.IO;
+using S3D.FileFormats;
 using S3D.IO;
 using S3D.TextureManagement;
 using System.IO;
@@ -12,17 +14,17 @@ namespace S3D {
 
         public PaletteManager PaletteManager { get; private set; }
 
-        public PictureManager PictureManager { get; private set; }
+        public WriteReferenceManager<ITexture> TextureWriteReferenceManager { get; private set; }
 
         private Context() {
         }
 
         public Context(TextureManager textureManager,
                        PaletteManager paletteManager,
-                       PictureManager pictureManager) {
+                       WriteReferenceManager<ITexture> pictureManager) {
             TextureManager = textureManager;
             PaletteManager = paletteManager;
-            PictureManager = pictureManager;
+            TextureWriteReferenceManager = pictureManager;
         }
     }
 
@@ -69,7 +71,7 @@ namespace S3D {
 
     public class Program {
         public static void Main(string[] args) {
-            if (args.Length == 0) {
+            if (args.Length != 2) {
                 return;
             }
 
@@ -77,11 +79,12 @@ namespace S3D {
             string outputFilePath = args[1];
             string basePath = Path.GetFullPath(Path.GetDirectoryName(objFileName));
 
-            PaletteManager paletteManager = new PaletteManager();
-            TextureManager textureManager = new TextureManager(basePath, paletteManager);
-            PictureManager pictureManager = new PictureManager();
+            var paletteManager = new PaletteManager();
+            var textureManager = new TextureManager(basePath, paletteManager);
+            var textureWriteReferenceManager =
+                new WriteReferenceManager<ITexture>();
 
-            Context context = new Context(textureManager, paletteManager, pictureManager);
+            var context = new Context(textureManager, paletteManager, textureWriteReferenceManager);
 
             S3DConverter converter = new WavefrontOBJS3DConverter(textureManager, paletteManager, basePath, objFileName);
 
@@ -234,7 +237,7 @@ namespace S3D {
                 ITexture texture = context.TextureManager.UniqueTextures[i];
 
                 var textureReferences =
-                    context.PictureManager.GetTextureDeferredReferences(texture);
+                    context.TextureWriteReferenceManager.GetDeferredReferences(texture);
 
                 foreach (IWriteReference writeReference in textureReferences) {
                     binaryWriter.WriteReferenceOffset(writeReference);
@@ -276,11 +279,13 @@ namespace S3D {
             binaryWriter.WriteReferenceOffset(objectContext.PicturesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {
-                if (context.TextureManager.TryGetTexture(face, out ITexture texture)) {
+                if (face.Picture != null) {
+                    IPicture picture = face.Picture;
+
                     // PICTURE -> 8B
 
                     //   Uint16 texno 2B texture number (in texture list)
-                    binaryWriter.WriteUInt16((UInt16)texture.SlotNumber);
+                    binaryWriter.WriteUInt16((UInt16)picture.Texture.SlotNumber);
 
                     //   Uint16 cmode 2B color mode
                     binaryWriter.WriteUInt16(0); // XXX: Fix (COL_32K = 2 - 1)
@@ -289,7 +294,7 @@ namespace S3D {
                     IWriteReference textureDataReference =
                         binaryWriter.WriteDeferredReference();
 
-                    context.PictureManager.AddTextureDeferredReference(texture, textureDataReference);
+                    context.TextureWriteReferenceManager.AddDeferredReference(picture.Texture, textureDataReference);
                 }
             }
         }
@@ -320,8 +325,7 @@ namespace S3D {
             binaryWriter.WriteReferenceOffset(objectContext.FaceAttributesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {
-                S3DFaceAttribStruct faceAttribStruct =
-                    CreateS3DFaceAttribsStruct(context.TextureManager, face);
+                S3DFaceAttribStruct faceAttribStruct = CreateS3DFaceAttribsStruct(face);
 
                 binaryWriter.WriteFaceAttributes(faceAttribStruct);
             }
@@ -351,8 +355,7 @@ namespace S3D {
         }
 
         // XXX: Refactor this
-        private static S3DFaceAttribStruct CreateS3DFaceAttribsStruct(TextureManager textureManager,
-                                                                      S3DFace face) {
+        private static S3DFaceAttribStruct CreateS3DFaceAttribsStruct(S3DFace face) {
             S3DFaceAttribStruct faceAttribStruct = new S3DFaceAttribStruct();
 
             faceAttribStruct.Flag = (byte)face.PlaneType;
@@ -364,13 +367,14 @@ namespace S3D {
             faceAttribStruct.ColorCalculationMode = (UInt16)face.ColorCalculationMode;
             faceAttribStruct.TextureType = (UInt16)face.TextureType;
 
-            // XXX: Is there a way to remove the texture manager dependency?
             if (face.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseTexture)) {
-                if (textureManager.TryGetTexture(face, out ITexture texture)) {
-                    faceAttribStruct.TextureNumber = (UInt16)texture.SlotNumber;
+                if (face.Picture != null) {
+                    IPicture picture = face.Picture;
 
-                    if (texture.Palette != null) {
-                        faceAttribStruct.PaletteNumberOrRGB1555 = (UInt16)texture.Palette.SlotNumber;
+                    faceAttribStruct.TextureNumber = (UInt16)picture.Texture.SlotNumber;
+
+                    if (picture.Palette != null) {
+                        faceAttribStruct.PaletteNumberOrRGB1555 = (UInt16)picture.Palette.SlotNumber;
                     }
                 }
             } else {
@@ -379,7 +383,7 @@ namespace S3D {
             }
 
             if (face.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseGouraudShading)) {
-                faceAttribStruct.GouraudShadingNumber = (UInt16)face.GouraudingShadingNumber;
+                faceAttribStruct.GouraudShadingNumber = (UInt16)face.GouraudShadingNumber;
             }
 
             faceAttribStruct.PrimitiveType = (UInt16)face.PrimitiveType;

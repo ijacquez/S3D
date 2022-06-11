@@ -14,7 +14,5 @@ namespace S3D.TextureManagement {
         bool IsVerticallyFlipped { get; }
 
         int SlotNumber { get; }
-
-        IPalette Palette { get; }
     }
 }

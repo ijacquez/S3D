@@ -1,6 +1,6 @@
 using System;
 
-namespace S3D {
+namespace S3D.FileFormats {
     public class S3DFaceAttribStruct {
         public byte Flag { get; set; }
 

@@ -1,5 +1,6 @@
 using MiscUtil.Conversion;
 using MiscUtil.IO;
+using S3D.IO;
 using S3D.TextureConverters;
 using S3D.Types;
 using System.Drawing;
@@ -7,7 +8,7 @@ using System.IO;
 using System.Numerics;
 using System;
 
-namespace S3D.IO {
+namespace S3D.FileFormats.IO {
     public class S3DBinaryWriter : IDisposable {
         private class WriteReference : IWriteReference {
             public long Offset { get; private set; }

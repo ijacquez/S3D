@@ -1,6 +1,6 @@
+using S3D.FileFormats;
 using S3D.TextureConverters;
 using S3D.TextureManagement;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
@@ -64,7 +64,7 @@ namespace S3D.Converters {
                     if (TryGetFaceColors(objectID, faceIndex, out Color[] colors)) {
                         Array.Copy(colors, s3dFace.GouraudShadingColors, s3dFace.GouraudShadingColors.Length);
 
-                        s3dFace.GouraudingShadingNumber = s3dObject.AllocateGouraudShadingNumber();
+                        s3dFace.GouraudShadingNumber = s3dObject.AllocateGouraudShadingNumber();
 
                         s3dFace.FeatureFlags |= S3DFaceAttribs.FeatureFlags.UseGouraudShading;
 
@@ -76,35 +76,37 @@ namespace S3D.Converters {
                     if (TryGetFaceTexturePath(objectID, faceIndex, out string texturePath)) {
                         TryGetFaceTextureVertices(objectID, faceIndex, out Vector2[] textureVertices);
 
-                        ITexture texture = TextureManager.MapToFace(s3dFace, texturePath, textureVertices);
+                        TextureManager.MapTextureToFace(s3dFace, texturePath, textureVertices);
+
+                        IPicture picture = s3dFace.Picture;
 
                         s3dFace.FeatureFlags |= S3DFaceAttribs.FeatureFlags.UseTexture;
 
                         s3dFace.RenderFlags |= S3DFaceAttribs.RenderFlags.DisableEndCodes;
                         s3dFace.RenderFlags |= S3DFaceAttribs.RenderFlags.DisableTransparencyIndex;
 
-                        if (texture.IsHorizontallyFlipped) {
+                        if (picture.Texture.IsHorizontallyFlipped) {
                             s3dFace.TextureFlipFlags |= S3DFaceAttribs.TextureFlipFlags.H;
                         }
 
-                        if (texture.IsVerticallyFlipped) {
+                        if (picture.Texture.IsVerticallyFlipped) {
                             s3dFace.TextureFlipFlags |= S3DFaceAttribs.TextureFlipFlags.V;
                         }
 
-                        switch (texture.VDP1Data.Type) {
-                            case TextureType.Indexed16:
+                        switch (picture.Texture.VDP1Data.Type) {
+                            case VDP1DataType.Indexed16:
                                 s3dFace.TextureType = S3DFaceAttribs.TextureType.CLUT16;
                                 break;
-                            case TextureType.Indexed64:
+                            case VDP1DataType.Indexed64:
                                 s3dFace.TextureType = S3DFaceAttribs.TextureType.ColorBank64;
                                 break;
-                            case TextureType.Indexed128:
+                            case VDP1DataType.Indexed128:
                                 s3dFace.TextureType = S3DFaceAttribs.TextureType.ColorBank128;
                                 break;
-                            case TextureType.Indexed256:
+                            case VDP1DataType.Indexed256:
                                 s3dFace.TextureType = S3DFaceAttribs.TextureType.ColorBank256;
                                 break;
-                            case TextureType.RGB1555:
+                            case VDP1DataType.RGB1555:
                                 s3dFace.TextureType = S3DFaceAttribs.TextureType.RGB1555;
                                 break;
                         }

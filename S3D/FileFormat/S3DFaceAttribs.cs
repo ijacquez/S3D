@@ -1,6 +1,6 @@
 using System;
 
-namespace S3D {
+namespace S3D.FileFormats {
     public static class S3DFaceAttribs {
         [Flags]
         public enum FeatureFlags {

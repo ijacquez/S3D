@@ -1,4 +1,3 @@
-using System.Drawing;
 using S3D.Types;
 
 namespace S3D.TextureManagement {
