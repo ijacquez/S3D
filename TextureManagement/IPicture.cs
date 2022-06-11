@@ -1,9 +1,9 @@
 namespace S3D.TextureManagement {
     public interface IPicture {
-        public ITexture Texture { get; }
+        ITexture Texture { get; }
 
-        public TextureFlags TextureFlags { get; set; }
+        TextureFlags TextureFlags { get; set; }
 
-        public IPalette Palette { get; }
+        IPalette Palette { get; }
     }
 }
