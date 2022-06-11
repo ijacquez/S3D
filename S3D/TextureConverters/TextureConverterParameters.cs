@@ -23,7 +23,9 @@ namespace S3D.TextureConverters {
         /// </summary>
         public int TargetHeight { get; set; } = -1;
 
-        public bool DumpFile { get; set; }
+        public bool AllowDuplicates { get; set; } = false;
+
+        public bool DumpFile { get; set; } = false;
 
         public TextureConverterParameters() {
         }
