@@ -1,5 +1,10 @@
+/.vs/
+/bin/
+/obj/
 *.png
 *.tga
 *.jpg
 *.mtl
 *.obj
+*.s3d
+*.blend
