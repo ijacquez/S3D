@@ -9,10 +9,6 @@ namespace S3D.TextureManagement {
 
         VDP1Data VDP1Data { get; }
 
-        bool IsHorizontallyFlipped { get; }
-
-        bool IsVerticallyFlipped { get; }
-
         int SlotNumber { get; }
     }
 }

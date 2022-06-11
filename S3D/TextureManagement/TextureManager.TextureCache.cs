@@ -31,24 +31,28 @@ namespace S3D.TextureManagement {
 
                 Console.WriteLine($"{Convert.ToHexString(computedHash)}");
 
-                foreach (Entry entry in _uniqueEntries) {
-                    if (entry.Hash.SequenceEqual(computedHash)) {
-                        return entry.Texture;
-                    }
+                Entry entry = _uniqueEntries.Find(PredicateFindTexture);
+
+                if (entry != null) {
+                    return entry.Texture;
                 }
 
-                Entry newEntry = new Entry();
+                entry = new Entry();
 
                 var baseTexture = (Texture)texture;
 
                 baseTexture.SlotNumber = AllocateTextureSlotNumber();
 
-                newEntry.Texture = texture;
-                newEntry.Hash = computedHash;
+                entry.Texture = texture;
+                entry.Hash = computedHash;
 
-                _uniqueEntries.Add(newEntry);
+                _uniqueEntries.Add(entry);
 
                 return texture;
+
+                bool PredicateFindTexture(Entry x) {
+                    return x.Hash.SequenceEqual(computedHash);
+                }
             }
 
             private int AllocateTextureSlotNumber() {

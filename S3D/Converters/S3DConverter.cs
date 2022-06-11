@@ -85,11 +85,11 @@ namespace S3D.Converters {
                         s3dFace.RenderFlags |= S3DFaceAttribs.RenderFlags.DisableEndCodes;
                         s3dFace.RenderFlags |= S3DFaceAttribs.RenderFlags.DisableTransparencyIndex;
 
-                        if (picture.Texture.IsHorizontallyFlipped) {
+                        if (picture.TextureFlags.HasFlag(TextureFlags.FlippedHorizontally)) {
                             s3dFace.TextureFlipFlags |= S3DFaceAttribs.TextureFlipFlags.H;
                         }
 
-                        if (picture.Texture.IsVerticallyFlipped) {
+                        if (picture.TextureFlags.HasFlag(TextureFlags.FlippedVertically)) {
                             s3dFace.TextureFlipFlags |= S3DFaceAttribs.TextureFlipFlags.V;
                         }
 

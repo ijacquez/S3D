@@ -11,14 +11,6 @@ namespace S3D.TextureManagement {
             public VDP1Data VDP1Data { get; set; }
 
             public int SlotNumber { get; set; } = -1;
-
-            public bool IsHorizontallyFlipped =>
-                TextureFlags.HasFlag(TextureFlags.FlippedHorizontally);
-
-            public bool IsVerticallyFlipped =>
-                TextureFlags.HasFlag(TextureFlags.FlippedVertically);
-
-            public TextureFlags TextureFlags { get; set; }
         }
     }
 }
