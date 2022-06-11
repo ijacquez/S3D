@@ -18,20 +18,18 @@ namespace S3D.TextureConverters {
         public static VDP1Data ToVDP1Data(string fileName, TextureConverterParameters parameters) {
             Image image = Image.FromFile(fileName);
 
-            var sanitizedParameters = new TextureConverterParameters(parameters);
-
-            SanitizeTargetWidthAndHeight(image, sanitizedParameters);
+            SanitizeTargetWidthAndHeight(image, parameters);
 
             switch (image.PixelFormat) {
                 case PixelFormat.Format4bppIndexed:
-                    return ToFormat4BPPIndexed(image, sanitizedParameters);
+                    return ToFormat4BPPIndexed(image, parameters);
                 case PixelFormat.Format8bppIndexed:
-                    return ToFormat8BPPIndexed(image, sanitizedParameters);
+                    return ToFormat8BPPIndexed(image, parameters);
                 case PixelFormat.Format16bppArgb1555:
                 case PixelFormat.Format16bppRgb555:
-                    return ToFormat15BPPRGB(image, sanitizedParameters);
+                    return ToFormat15BPPRGB(image, parameters);
                 default:
-                    return ToFormatUnknown(image, sanitizedParameters);
+                    return ToFormatUnknown(image, parameters);
             }
         }
 

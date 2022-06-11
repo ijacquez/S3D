@@ -1,3 +1,4 @@
+using S3D.Extensions;
 using S3D.FileFormats;
 using S3D.TextureConverters;
 using System.Collections.Generic;
@@ -69,13 +70,10 @@ namespace S3D.TextureManagement {
             return texture;
         }
 
-        private static VDP1Data CreateVDP1Data(Texture texture,
-                                               TextureConverterParameters textureConverterParameters) {
-            Array.Copy(texture.Vertices,
-                       textureConverterParameters.TextureVertices,
-                       texture.Vertices.Length);
+        private static VDP1Data CreateVDP1Data(ITexture texture, TextureConverterParameters parameters) {
+            parameters.TextureVertices = texture.Vertices;
 
-            return VDP1DataConverter.ToVDP1Data(texture.FilePath, textureConverterParameters);
+            return VDP1DataConverter.ToVDP1Data(texture.FilePath, parameters);
         }
     }
 }
