@@ -71,6 +71,10 @@ namespace S3D {
 
     public class Program {
         public static void Main(string[] args) {
+            var raylibController = new UI.Glue.Raylib.RaylibController("Hello", 1280, 720);
+
+            raylibController.Run(new S3D.UI.TestWindow());
+
             if (args.Length != 2) {
                 return;
             }
