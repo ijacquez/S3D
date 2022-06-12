@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System;
+using S3D.ProjectManagement;
 
 namespace S3D {
     internal class Context {
@@ -28,7 +29,7 @@ namespace S3D {
         }
     }
 
-    internal class S3DObjectContext {
+    internal class S3DObjectWriteContext {
         public S3DObject Object { get; private set; }
 
         /// <summary>
@@ -61,10 +62,10 @@ namespace S3D {
         /// </summary>
         public IWriteReference PicturesReference { get; set; }
 
-        private S3DObjectContext() {
+        private S3DObjectWriteContext() {
         }
 
-        public S3DObjectContext(S3DObject s3dObject) {
+        public S3DObjectWriteContext(S3DObject s3dObject) {
             Object = s3dObject;
         }
     }
@@ -75,30 +76,30 @@ namespace S3D {
                 return;
             }
 
+            var paletteManager = new PaletteManager();
+            var textureManager = new TextureManager(paletteManager);
+            var textureWriteReferenceManager = new WriteReferenceManager<ITexture>();
+            var context = new Context(textureManager, paletteManager, textureWriteReferenceManager);
+
             string objFileName = args[0];
             string outputFilePath = args[1];
             string basePath = Path.GetFullPath(Path.GetDirectoryName(objFileName));
 
-            var paletteManager = new PaletteManager();
-            var textureManager = new TextureManager(basePath, paletteManager);
-            var textureWriteReferenceManager =
-                new WriteReferenceManager<ITexture>();
-
-            var context = new Context(textureManager, paletteManager, textureWriteReferenceManager);
-
             S3DConverter converter = new WavefrontOBJS3DConverter(textureManager, paletteManager, basePath, objFileName);
 
-            S3DObjectContext[] objectContexts =
-                converter.ToS3DObjects()
-                         .Select((s3dObject) => new S3DObjectContext(s3dObject))
-                         .ToArray();
+            S3DObject[] objects = converter.ToS3DObjects();
+
+            // For writing
+            S3DObjectWriteContext[] objectWriteContexts =
+                objects.Select((s3dObject) => new S3DObjectWriteContext(s3dObject))
+                       .ToArray();
 
             using (var fileStream = File.Open(outputFilePath, FileMode.Create)) {
-                WriteOutput(fileStream, objectContexts, context);
+                WriteS3D(fileStream, objectWriteContexts, context);
             }
         }
 
-        private static void WriteOutput(FileStream fileStream, S3DObjectContext[] objectContexts, Context context) {
+        private static void WriteS3D(FileStream fileStream, S3DObjectWriteContext[] objectContexts, Context context) {
             IWriteReference textureBaseReference;
             IWriteReference textureDataBaseReference;
             IWriteReference paletteBaseReference;
@@ -123,12 +124,12 @@ namespace S3D {
 
                 eofReference = binaryWriter.WriteDeferredReference();
 
-                foreach (S3DObjectContext objectContext in objectContexts) {
+                foreach (S3DObjectWriteContext objectContext in objectContexts) {
                     // XPDATA (extended)
                     WriteExtendedPolygonalStructure(binaryWriter, objectContext);
                 }
 
-                foreach (S3DObjectContext objectContext in objectContexts) {
+                foreach (S3DObjectWriteContext objectContext in objectContexts) {
                     // pntbl
                     WriteVerticesData(binaryWriter, objectContext);
                     // pltbl
@@ -201,7 +202,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteExtendedPolygonalStructure(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+        private static void WriteExtendedPolygonalStructure(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext) {
             // XPDATA -> 24B
             //   POINT *   pntbl              4B offset
             objectContext.VerticesReference = binaryWriter.WriteDeferredReference();
@@ -271,7 +272,7 @@ namespace S3D {
             }
         }
 
-        private static void WritePictureStructure(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext, Context context) {
+        private static void WritePictureStructure(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext, Context context) {
             if (objectContext.Object.PictureCount == 0) {
                 return;
             }
@@ -299,7 +300,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteGouraudShadingTablesData(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+        private static void WriteGouraudShadingTablesData(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext) {
             if (objectContext.Object.GouraudShadingCount == 0) {
                 return;
             }
@@ -313,7 +314,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteVectorNormalsData(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+        private static void WriteVectorNormalsData(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext) {
             binaryWriter.WriteReferenceOffset(objectContext.VertexNormalsReference);
 
             foreach (Vector3 normal in objectContext.Object.VertexNormals) {
@@ -321,7 +322,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteFaceAttributesData(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext, Context context) {
+        private static void WriteFaceAttributesData(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext, Context context) {
             binaryWriter.WriteReferenceOffset(objectContext.FaceAttributesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {
@@ -331,7 +332,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteFaceIndicesData(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+        private static void WriteFaceIndicesData(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext) {
             binaryWriter.WriteReferenceOffset(objectContext.FacesReference);
 
             foreach (S3DFace face in objectContext.Object.Faces) {
@@ -346,7 +347,7 @@ namespace S3D {
             }
         }
 
-        private static void WriteVerticesData(S3DBinaryWriter binaryWriter, S3DObjectContext objectContext) {
+        private static void WriteVerticesData(S3DBinaryWriter binaryWriter, S3DObjectWriteContext objectContext) {
             binaryWriter.WriteReferenceOffset(objectContext.VerticesReference);
 
             foreach (Vector3 vertex in objectContext.Object.Vertices) {

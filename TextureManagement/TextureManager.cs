@@ -1,16 +1,11 @@
-using S3D.Extensions;
 using S3D.FileFormats;
 using S3D.TextureConverters;
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
-using System;
 
 namespace S3D.TextureManagement {
     public sealed partial class TextureManager {
         private readonly List<Picture> _pictures = new List<Picture>();
-
-        private readonly string _basePath;
 
         private readonly TextureConverterParameters _textureConverterParameters =
             new TextureConverterParameters();
@@ -22,14 +17,13 @@ namespace S3D.TextureManagement {
         private TextureManager() {
         }
 
-        public TextureManager(string basePath, PaletteManager paletteManager) {
+        public TextureManager(PaletteManager paletteManager) {
             // XXX: How do we expose the feature to set target width/height?
             _textureConverterParameters.TargetWidth     = 24;
             _textureConverterParameters.TargetHeight    = 24;
             _textureConverterParameters.AllowDuplicates = false;
             _textureConverterParameters.DumpFile        = true;
 
-            _basePath = Path.GetFullPath(basePath);
             _paletteManager = paletteManager;
         }
 
@@ -43,13 +37,6 @@ namespace S3D.TextureManagement {
 
             if (!_textureConverterParameters.AllowDuplicates) {
                 cachedTexture = _textureCache.GetOrAddTexture(texture);
-
-                // XXX: Debug. Remove
-                if (texture == cachedTexture) {
-                    Console.WriteLine($"[1;32m     New texture: {cachedTexture.SlotNumber}[m");
-                } else {
-                    Console.WriteLine($"[1;31mExisting texture: {cachedTexture.SlotNumber}[m");
-                }
             }
 
             picture.Texture = cachedTexture;
