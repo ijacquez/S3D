@@ -3,16 +3,22 @@ using System.Numerics;
 
 namespace S3D.Utilities {
     public static class MathUtility {
+        /// <summary>
+        /// </summary>
         public static float Modulo(float a, float b) {
             return ((a < 0) ? (b + (a % b)) : (a % b));
         }
 
+        /// <summary>
+        /// </summary>
         public static float Lerp(float a, float b, float t) {
             float tClamped = Math.Clamp(t, 0.0f, 1.0f);
 
             return ((a * (1.0f - tClamped)) + (b * tClamped));
         }
 
+        /// <summary>
+        /// </summary>
         public static Vector2 Blerp(Vector2[] points, float tX, float tY) {
             //                    (1,1)
             //       t3--------t2

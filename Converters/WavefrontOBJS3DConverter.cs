@@ -29,7 +29,7 @@ namespace S3D.Converters {
                                         PaletteManager paletteManager,
                                         string basePath,
                                         string fileName) : base(textureManager, paletteManager) {
-            _fileName = Path.GetFileName(fileName);
+            _fileName = fileName;
             _basePath = basePath;
             _stream = File.Open(Path.Combine(_basePath, _fileName), FileMode.Open);
             _objFile = ObjFile.FromStream(_stream);
