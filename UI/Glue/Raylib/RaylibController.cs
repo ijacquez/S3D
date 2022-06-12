@@ -40,7 +40,6 @@ namespace S3D.UI.Glue.Raylib {
                 // them through to ImGui
                 controller.Update(dt);
                 window.Update(dt);
-                // XXX: editor.Update(dt);
 
                 // Draw
                 Raylib.BeginDrawing(); {
