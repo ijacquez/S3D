@@ -1,3 +1,5 @@
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json;
 using S3D.Types;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,16 +7,23 @@ using System;
 
 namespace S3D.TextureConverters {
     public class VDP1Data {
-        public VDP1DataType Type { get; }
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public VDP1DataType Type { get; private set; }
 
-        public byte[] Data { get; }
+        [JsonProperty]
+        public byte[] Data { get; private set; }
 
-        public int Width { get; }
+        [JsonProperty]
+        public int Width { get; private set; }
 
-        public int Height { get; }
+        [JsonProperty]
+        public int Height { get; private set; }
 
-        public RGB1555[] Palette { get; }
+        [JsonProperty]
+        public RGB1555[] Palette { get; private set; }
 
+        [JsonConstructor]
         private VDP1Data() {
         }
 

@@ -1,3 +1,4 @@
+using S3D.PaletteManagement;
 using S3D.TextureManagement;
 using System.Collections.Generic;
 using System.Drawing;

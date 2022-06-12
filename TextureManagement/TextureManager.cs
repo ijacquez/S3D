@@ -1,4 +1,5 @@
 using S3D.FileFormats;
+using S3D.PaletteManagement;
 using S3D.TextureConverters;
 using System.Collections.Generic;
 using System.Numerics;
@@ -27,13 +28,25 @@ namespace S3D.TextureManagement {
             _paletteManager = paletteManager;
         }
 
-        public IReadOnlyList<ITexture> UniqueTextures => _textureCache.UniqueTextures;
+        public IReadOnlyList<Texture> UniqueTextures => _textureCache.UniqueTextures;
+
+        public void AddPicture(Picture picture) {
+            if (picture == null) {
+                return;
+            }
+
+            if (!_textureCache.ContainsTexture(picture.Texture)) {
+                _textureCache.GetOrAddTexture(picture.Texture);
+
+                _pictures.Add(picture);
+            }
+        }
 
         public void MapTextureToFace(S3DFace face, string textureFilePath, Vector2[] textureVertices) {
             var picture = new Picture();
 
-            ITexture texture = CreateTexture(textureFilePath, textureVertices);
-            ITexture cachedTexture = texture;
+            Texture texture = CreateTexture(textureFilePath, textureVertices);
+            Texture cachedTexture = texture;
 
             if (!_textureConverterParameters.AllowDuplicates) {
                 cachedTexture = _textureCache.GetOrAddTexture(texture);
@@ -57,7 +70,7 @@ namespace S3D.TextureManagement {
             return texture;
         }
 
-        private static VDP1Data CreateVDP1Data(ITexture texture, TextureConverterParameters parameters) {
+        private static VDP1Data CreateVDP1Data(Texture texture, TextureConverterParameters parameters) {
             parameters.TextureVertices = texture.Vertices;
 
             return VDP1DataConverter.ToVDP1Data(texture.FilePath, parameters);

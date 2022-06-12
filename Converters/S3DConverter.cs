@@ -1,4 +1,5 @@
 using S3D.FileFormats;
+using S3D.PaletteManagement;
 using S3D.TextureConverters;
 using S3D.TextureManagement;
 using System.Drawing;
@@ -78,7 +79,7 @@ namespace S3D.Converters {
 
                         TextureManager.MapTextureToFace(s3dFace, texturePath, textureVertices);
 
-                        IPicture picture = s3dFace.Picture;
+                        Picture picture = s3dFace.Picture;
 
                         s3dFace.FeatureFlags |= S3DFaceAttribs.FeatureFlags.UseTexture;
 
