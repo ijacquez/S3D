@@ -6,7 +6,7 @@ namespace S3D.UI.Glue.ImGui {
     using ImGuiNET;
 
     /// <summary>
-    /// ImGui controller using Raylib-cs
+    ///   ImGui controller using Raylib-cs.
     /// </summary>
     internal class ImGuiController : IDisposable {
         IntPtr context;
@@ -135,21 +135,18 @@ namespace S3D.UI.Glue.ImGui {
             io.KeySuper = io.KeysDown[(int)KeyboardKey.KEY_LEFT_SUPER] || io.KeysDown[(int)KeyboardKey.KEY_RIGHT_SUPER];
 
             // Key states
-            for (int i = (int)KeyboardKey.KEY_SPACE; i < (int)KeyboardKey.KEY_KB_MENU + 1; i++)
-            {
+            for (int i = (int)KeyboardKey.KEY_SPACE; i < (int)KeyboardKey.KEY_KB_MENU + 1; i++) {
                 io.KeysDown[i] = Raylib.IsKeyDown((KeyboardKey)i);
             }
 
             // Key input
             int keyPressed = Raylib.GetCharPressed();
-            if (keyPressed != 0)
-            {
+            if (keyPressed != 0) {
                 io.AddInputCharacter((uint)keyPressed);
             }
         }
 
-        private void UpdateMouse()
-        {
+        private void UpdateMouse() {
             ImGuiIOPtr io = ImGui.GetIO();
 
             // Store button states
@@ -165,28 +162,20 @@ namespace S3D.UI.Glue.ImGui {
             Vector2 mousePosition = io.MousePos;
             bool focused = Raylib.IsWindowFocused();
 
-            if (focused)
-            {
-                if (io.WantSetMousePos)
-                {
+            if (focused) {
+                if (io.WantSetMousePos) {
                     Raylib.SetMousePosition((int)mousePosition.X, (int)mousePosition.Y);
-                }
-                else
-                {
+                } else {
                     io.MousePos = Raylib.GetMousePosition();
                 }
             }
 
             // Mouse cursor state
-            if ((io.ConfigFlags & ImGuiConfigFlags.NoMouseCursorChange) == 0 || Raylib.IsCursorHidden())
-            {
+            if ((io.ConfigFlags & ImGuiConfigFlags.NoMouseCursorChange) == 0 || Raylib.IsCursorHidden()) {
                 ImGuiMouseCursor cursor = ImGui.GetMouseCursor();
-                if (cursor == ImGuiMouseCursor.None || io.MouseDrawCursor)
-                {
+                if ((cursor == ImGuiMouseCursor.None) || io.MouseDrawCursor) {
                     Raylib.HideCursor();
-                }
-                else
-                {
+                } else {
                     Raylib.ShowCursor();
                 }
             }
@@ -257,7 +246,7 @@ namespace S3D.UI.Glue.ImGui {
             int fbHeight = (int)(data.DisplaySize.Y * data.FramebufferScale.Y);
 
             // Avoid rendering if display is minimized or if the command list is empty
-            if (fbWidth <= 0 || fbHeight <= 0 || data.CmdListsCount == 0) {
+            if ((fbWidth <= 0) || (fbHeight <= 0) || (data.CmdListsCount == 0)) {
                 return;
             }
 
