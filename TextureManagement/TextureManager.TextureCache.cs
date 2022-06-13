@@ -1,13 +1,13 @@
+using Blake2Fast;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Blake2Fast;
 
 namespace S3D.TextureManagement {
     public sealed partial class TextureManager {
         private sealed class TextureCache {
             private class Entry {
-                public ITexture Texture { get; set; }
+                public Texture Texture { get; set; }
 
                 public byte[] Hash { get; set; }
             }
@@ -21,17 +21,29 @@ namespace S3D.TextureManagement {
             public TextureCache() {
             }
 
-            public IReadOnlyList<ITexture> UniqueTextures =>
+            /// <summary>
+            /// </summary>
+            public IReadOnlyList<Texture> UniqueTextures =>
                 _uniqueEntries.Select((entry) => entry.Texture)
                               .ToList()
                               .AsReadOnly();
 
-            public ITexture GetOrAddTexture(ITexture texture) {
-                byte[] computedHash = Blake2b.ComputeHash(_HashDigestLength, texture.VDP1Data.Data);
+            /// <summary>
+            /// </summary>
+            public bool ContainsTexture(Texture texture) {
+                byte[] computedHash = GenerateHashFromTexture(texture);
 
-                Console.WriteLine($"{Convert.ToHexString(computedHash)}");
+                Entry entry = GetEntry(computedHash);
 
-                Entry entry = _uniqueEntries.Find(PredicateFindTexture);
+                return (entry != null);
+            }
+
+            /// <summary>
+            /// </summary>
+            public Texture GetOrAddTexture(Texture texture) {
+                byte[] computedHash = GenerateHashFromTexture(texture);
+
+                Entry entry = GetEntry(computedHash);
 
                 if (entry != null) {
                     return entry.Texture;
@@ -39,24 +51,38 @@ namespace S3D.TextureManagement {
 
                 entry = new Entry();
 
-                var baseTexture = (Texture)texture;
-
-                baseTexture.SlotNumber = AllocateTextureSlotNumber();
-
                 entry.Texture = texture;
                 entry.Hash = computedHash;
+
+                if (entry.Texture.SlotNumber < 0) {
+                    entry.Texture.SlotNumber = AllocateTextureSlotNumber();
+                } else {
+                    SetTextureSlotNumber(entry.Texture.SlotNumber);
+                }
 
                 _uniqueEntries.Add(entry);
 
                 return texture;
+            }
 
-                bool PredicateFindTexture(Entry x) {
-                    return x.Hash.SequenceEqual(computedHash);
+            private Entry GetEntry(byte[] hash) {
+                return _uniqueEntries.Find(PredicateFindEntry);
+
+                bool PredicateFindEntry(Entry x) {
+                    return x.Hash.SequenceEqual(hash);
                 }
+            }
+
+            private void SetTextureSlotNumber(int slotNumber) {
+                _textureSlotNumber = Math.Max(slotNumber, _textureSlotNumber);;
             }
 
             private int AllocateTextureSlotNumber() {
                 return _textureSlotNumber++;
+            }
+
+            private static byte[] GenerateHashFromTexture(Texture texture) {
+                return Blake2b.ComputeHash(_HashDigestLength, texture.VDP1Data.Data);
             }
         }
     }

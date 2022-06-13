@@ -1,33 +1,56 @@
-using System.Numerics;
-using System.Drawing;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json;
 using S3D.TextureManagement;
+using System.Drawing;
+using System.Numerics;
 
 namespace S3D.FileFormats {
     public class S3DFace {
+        [JsonProperty]
         public int[] Indices { get; } = new int[4];
 
+        [JsonProperty]
         public Vector3 Normal { get; set; }
 
+        [JsonProperty]
         public Color[] GouraudShadingColors { get; } = new Color[4];
 
-        public int GouraudShadingNumber { get; set; }
+        [JsonProperty]
+        public int GouraudShadingNumber { get; set; } = -1;
 
-        public IPicture Picture { get; set; }
+        [JsonProperty]
+        public Picture Picture { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.FeatureFlags FeatureFlags { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.PrimitiveType PrimitiveType { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.PlaneType PlaneType { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.SortType SortType { get; set; } = S3DFaceAttribs.SortType.Center;
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.RenderFlags RenderFlags { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.ColorCalculationMode ColorCalculationMode { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.TextureType TextureType { get; set; }
 
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.TextureFlipFlags TextureFlipFlags { get; set; }
     }
 }

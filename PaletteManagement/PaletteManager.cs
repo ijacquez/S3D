@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 
-namespace S3D.TextureManagement {
+namespace S3D.PaletteManagement {
     public sealed partial class PaletteManager {
         private int _slotNumber;
 
-        private readonly List<IPalette> _uniquePalettes = new List<IPalette>();
+        private readonly List<Palette> _uniquePalettes = new List<Palette>();
 
-        public IReadOnlyList<IPalette> UniquePalettes => _uniquePalettes;
+        public IReadOnlyList<Palette> UniquePalettes => _uniquePalettes;
 
-        public IPalette GetOrAddPalette(RGB1555[] paletteColors) {
+        public Palette GetOrAddPalette(RGB1555[] paletteColors) {
             if (paletteColors == null) {
                 return null;
             }
 
-            IPalette existingPalette = FindPalette(paletteColors);
+            Palette existingPalette = FindPalette(paletteColors);
 
             if (existingPalette != null) {
                 return existingPalette;
@@ -32,14 +32,14 @@ namespace S3D.TextureManagement {
             return palette;
         }
 
-        private IPalette FindPalette(RGB1555[] paletteColors) {
+        private Palette FindPalette(RGB1555[] paletteColors) {
             if (paletteColors == null) {
                 throw new ArgumentNullException();
             }
 
             return _uniquePalettes.Find(Predicate);
 
-            bool Predicate(IPalette x) {
+            bool Predicate(Palette x) {
                 return x.Colors.SequenceEqual(paletteColors);
             }
         }
