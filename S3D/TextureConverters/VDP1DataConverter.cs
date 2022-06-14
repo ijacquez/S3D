@@ -245,13 +245,13 @@ namespace S3D.TextureConverters {
         #region Texture sampling
 
         private static int GetBitmapX(int width, float u) {
-            float uClamped = TextureUtility.ClampVectorComponent(u);
+            float uClamped = TexcoordUtility.ClampVectorComponent(u);
 
             return ((int)(width * uClamped));
         }
 
         private static int GetBitmapY(int height, float v) {
-            float vClamped = 1.0f - TextureUtility.ClampVectorComponent(v);
+            float vClamped = 1.0f - TexcoordUtility.ClampVectorComponent(v);
 
             return ((int)(height * vClamped));
         }

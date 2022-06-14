@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "S3D": {
+      "commandName": "Project",
+      "workingDirectory": "$(SolutionDir)$(ProjectName)"
+    }
+  }
+}

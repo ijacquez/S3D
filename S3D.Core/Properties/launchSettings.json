@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "S3D.Core": {
+      "commandName": "Project",
+      "workingDirectory": "$(SolutionDir)"
+    }
+  }
+}

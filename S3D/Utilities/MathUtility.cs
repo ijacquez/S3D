@@ -1,12 +1,12 @@
-using System;
 using System.Numerics;
+using System;
 
 namespace S3D.Utilities {
     public static class MathUtility {
         /// <summary>
         /// </summary>
         public static float Modulo(float a, float b) {
-            return ((a < 0) ? (b + (a % b)) : (a % b));
+            return ((a < 0.0f) ? (b + (a % b)) : (a % b));
         }
 
         /// <summary>

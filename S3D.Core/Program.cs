@@ -7,12 +7,17 @@ using S3D.TextureManagement;
 using System.IO;
 using System;
 
-namespace S3D {
+namespace S3D.Core {
     public class Program {
         public static void Main(string[] args) {
-            var raylibController = new UI.Glue.Raylib.RaylibController("Hello", 1280, 720);
+            UI.Window w = new UI.Window("Test", 800, 800);
 
-            raylibController.Run(new S3D.UI.TestWindow());
+            UI.Views.MainView mainView = new UI.Views.MainView();
+
+            w.Load += mainView.Load;
+            w.RenderFrame += mainView.RenderFrame;
+
+            w.Run();
 
             if (args.Length != 1) {
                 return;

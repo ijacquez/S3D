@@ -61,8 +61,8 @@
         ]
     },
     "RenameOptions": {
-        "RenameInComments": false,
+        "RenameInComments": true,
         "RenameOverloads": true,
-        "RenameInStrings": false
+        "RenameInStrings": true
     }
 }
