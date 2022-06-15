@@ -283,8 +283,8 @@ void main()
                               -1.0f,
                               1.0f);
 
-            _shader.UseShader();
-            GL.UniformMatrix4(_shader.GetUniformLocation("projection_matrix"), false, ref mvp);
+            _shader.Bind();
+            _shader.SetMatrix4("projection_matrix", false, mvp);
             GL.Uniform1(_shader.GetUniformLocation("in_fontTexture"), 0);
             DebugUtility.CheckGLError("Projection");
 

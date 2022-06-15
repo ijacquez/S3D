@@ -7,13 +7,13 @@ using System.Numerics;
 namespace S3D.FileFormats {
     public class S3DFace {
         [JsonProperty]
-        public int[] Indices { get; } = new int[4];
+        public uint[] Indices { get; private set; } = new uint[4];
 
         [JsonProperty]
         public Vector3 Normal { get; set; }
 
         [JsonProperty]
-        public Color[] GouraudShadingColors { get; } = new Color[4];
+        public Color[] GouraudShadingColors { get; private set; } = new Color[4];
 
         [JsonProperty]
         public int GouraudShadingNumber { get; set; } = -1;

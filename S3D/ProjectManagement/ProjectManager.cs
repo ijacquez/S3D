@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using S3D.ProjectManagement.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -69,6 +70,19 @@ namespace S3D.ProjectManagement {
             } catch (JsonException) {
                 throw new ProjectSyntaxErrorException();
             }
+        }
+
+        /// <summary>
+        /// </summary>
+        public static void Close(ProjectSettings projectSettings) {
+            OpenedProjectSettings openedProjectSettings =
+                GetOpenedProjectSettings(projectSettings);
+
+            if (openedProjectSettings == null) {
+                throw new ProjectNotOpenedException();
+            }
+
+            _OpenedProjectSettings.Remove(openedProjectSettings);
         }
 
         /// <summary>
