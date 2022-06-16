@@ -72,6 +72,8 @@ namespace S3D.UI {
             GL.ClearColor(new Color4(0, 32, 48, 255));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
             RenderFrame?.Invoke(e);
 
             _imGuiController.Render();

@@ -255,7 +255,7 @@ namespace S3D.Converters {
             return true;
         }
 
-        private ObjTriplet[] GetVertexTriplets(ObjFace objFace) {
+        private static ObjTriplet[] GetVertexTriplets(ObjFace objFace) {
             IList<ObjTriplet> objTriplets = objFace.Vertices;
 
             if (objTriplets.Count == 3) {
@@ -267,19 +267,19 @@ namespace S3D.Converters {
             return objTriplets.ToArray();
         }
 
-        private int[] GetVertexIndices(ObjFace objFace) {
+        private static int[] GetVertexIndices(ObjFace objFace) {
             // Value is 1-indexed
             return GetVertexTriplets(objFace).Select((objTriplet) => (objTriplet.Vertex - 1))
                                              .ToArray();
         }
 
-        private int[] GetVertexNormalIndices(ObjFace objFace) {
+        private static int[] GetVertexNormalIndices(ObjFace objFace) {
             // Value is 1-indexed
             return GetVertexTriplets(objFace).Select((objTriplet) => (objTriplet.Normal - 1))
                                              .ToArray();
         }
 
-        private int[] GetVertexUVIndices(ObjFace objFace) {
+        private static int[] GetVertexUVIndices(ObjFace objFace) {
             // Value is 1-indexed
             return GetVertexTriplets(objFace).Select((objTriplet) => objTriplet.Texture - 1).Reverse()
                                              .ToArray();

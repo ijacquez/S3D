@@ -10,16 +10,15 @@ using System;
 namespace S3D.Core {
     public class Program {
         public static void Main(string[] args) {
-            UI.Window w = new UI.Window("Test", 800, 800);
-
-            UI.Views.MainView mainView = new UI.Views.MainView();
-
-            w.Load += mainView.Load;
-            w.RenderFrame += mainView.RenderFrame;
-
-            w.Run();
-
             if (args.Length != 1) {
+                UI.Window w = new UI.Window("Test", 800, 800);
+
+                UI.Views.MainView mainView = new UI.Views.MainView();
+
+                w.Load += mainView.Load;
+                w.RenderFrame += mainView.RenderFrame;
+
+                w.Run();
                 return;
             }
 

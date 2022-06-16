@@ -134,7 +134,7 @@ void main()
             _fontTexture.SetMagFilter(TextureMagFilter.Linear);
             _fontTexture.SetMinFilter(TextureMinFilter.Linear);
 
-            io.Fonts.SetTexID((IntPtr)_fontTexture.GLTexture);
+            io.Fonts.SetTexID((IntPtr)_fontTexture.Handle);
 
             io.Fonts.ClearTexData();
         }
@@ -246,15 +246,15 @@ void main()
             io.KeyMap[(int)ImGuiKey.Z] = (int)Keys.Z;
         }
 
-        private void RenderImDrawData(ImDrawDataPtr draw_data) {
-            if (draw_data.CmdListsCount == 0) {
+        private void RenderImDrawData(ImDrawDataPtr drawData) {
+            if (drawData.CmdListsCount == 0) {
                 return;
             }
 
-            for (int i = 0; i < draw_data.CmdListsCount; i++) {
-                ImDrawListPtr cmd_list = draw_data.CmdListsRange[i];
+            for (int i = 0; i < drawData.CmdListsCount; i++) {
+                ImDrawListPtr cmdList = drawData.CmdListsRange[i];
 
-                int vertexSize = cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
+                int vertexSize = cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
                 if (vertexSize > _vertexBufferSize) {
                     int newSize = (int)Math.Max(_vertexBufferSize * 1.5f, vertexSize);
                     GL.NamedBufferData(_vertexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -263,7 +263,7 @@ void main()
                     Console.WriteLine($"Resized dear imgui vertex buffer to new size {_vertexBufferSize}");
                 }
 
-                int indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
+                int indexSize = cmdList.IdxBuffer.Size * sizeof(ushort);
                 if (indexSize > _indexBufferSize) {
                     int newSize = (int)Math.Max(_indexBufferSize * 1.5f, indexSize);
                     GL.NamedBufferData(_indexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -291,7 +291,7 @@ void main()
             GL.BindVertexArray(_vertexArray);
             DebugUtility.CheckGLError("VAO");
 
-            draw_data.ScaleClipRects(io.DisplayFramebufferScale);
+            drawData.ScaleClipRects(io.DisplayFramebufferScale);
 
             GL.Enable(EnableCap.Blend);
             GL.Enable(EnableCap.ScissorTest);
@@ -301,8 +301,8 @@ void main()
             GL.Disable(EnableCap.DepthTest);
 
             // Render command lists
-            for (int n = 0; n < draw_data.CmdListsCount; n++) {
-                ImDrawListPtr cmd_list = draw_data.CmdListsRange[n];
+            for (int n = 0; n < drawData.CmdListsCount; n++) {
+                ImDrawListPtr cmd_list = drawData.CmdListsRange[n];
 
                 GL.NamedBufferSubData(_vertexBuffer, IntPtr.Zero, cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>(), cmd_list.VtxBuffer.Data);
                 DebugUtility.CheckGLError($"Data Vert {n}");

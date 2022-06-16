@@ -23,7 +23,7 @@ namespace S3D.UI.OpenTKFramework.Types {
     public class Shader {
         public string Name { get; }
 
-        public int Program { get; private set; }
+        public int Handler { get; private set; }
 
         private readonly Dictionary<string, int> _uniformToLocation =
             new Dictionary<string, int>();
@@ -40,7 +40,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 (ShaderType.VertexShader, vertexShader),
                 (ShaderType.FragmentShader, fragmentShader),
             };
-            Program = CreateProgram(name, Files);
+            Handler = CreateProgram(name, Files);
 
             foreach (UniformFieldInfo fieldInfo in GetUniforms()) {
                 _uniformToLocation.Add(fieldInfo.Name, fieldInfo.Location);
@@ -52,28 +52,28 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         public void Bind() {
-            GL.UseProgram(Program);
+            GL.UseProgram(Handler);
         }
 
         public void Dispose() {
             if (Initialized) {
-                GL.DeleteProgram(Program);
+                GL.DeleteProgram(Handler);
 
                 Initialized = false;
             }
         }
 
         public UniformFieldInfo[] GetUniforms() {
-            GL.GetProgram(Program, GetProgramParameterName.ActiveUniforms, out int uniformCount);
+            GL.GetProgram(Handler, GetProgramParameterName.ActiveUniforms, out int uniformCount);
 
             UniformFieldInfo[] uniforms = new UniformFieldInfo[uniformCount];
 
             for (int i = 0; i < uniformCount; i++) {
-                string name = GL.GetActiveUniform(Program, i, out int Size, out ActiveUniformType Type);
+                string name = GL.GetActiveUniform(Handler, i, out int Size, out ActiveUniformType Type);
 
                 UniformFieldInfo fieldInfo = new UniformFieldInfo();
 
-                fieldInfo.Location = GL.GetUniformLocation(Program, name);
+                fieldInfo.Location = GL.GetUniformLocation(Handler, name);
                 fieldInfo.Name = name;
                 fieldInfo.Size = Size;
                 fieldInfo.Type = Type;
@@ -86,12 +86,12 @@ namespace S3D.UI.OpenTKFramework.Types {
 
 
         public AttribFieldInfo[] GetAttribs() {
-            GL.GetProgram(Program, GetProgramParameterName.ActiveAttributes, out int attribCount);
+            GL.GetProgram(Handler, GetProgramParameterName.ActiveAttributes, out int attribCount);
 
             AttribFieldInfo[] attribs = new AttribFieldInfo[attribCount];
 
             for (int i = 0; i < attribCount; i++) {
-                string name = GL.GetActiveAttrib(Program, i, out int Size, out ActiveAttribType Type);
+                string name = GL.GetActiveAttrib(Handler, i, out int Size, out ActiveAttribType Type);
 
                 AttribFieldInfo fieldInfo = new AttribFieldInfo();
 
@@ -123,7 +123,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 return -1;
             }
 
-            return GL.GetUniformLocation(Program, uniform);
+            return GL.GetUniformLocation(Handler, uniform);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -132,7 +132,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 Debug.Print($"The attrib '{attrib}' does not exist in the shader '{Name}'!");
             }
 
-            return GL.GetAttribLocation(Program, attrib);
+            return GL.GetAttribLocation(Handler, attrib);
         }
 
         private int CreateProgram(string name, params (ShaderType Type, string source)[] shaderPaths) {

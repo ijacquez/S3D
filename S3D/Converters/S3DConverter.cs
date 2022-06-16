@@ -69,7 +69,8 @@ namespace S3D.Converters {
 
                         s3dFace.FeatureFlags |= S3DFaceAttribs.FeatureFlags.UseGouraudShading;
 
-                        // By default, choose mode 4. Later on, the user can change to different modes
+                        // By default, choose mode 4. Later on, the user can
+                        // change to different modes
                         s3dFace.ColorCalculationMode = S3DFaceAttribs.ColorCalculationMode.GouraudShading;
                     }
 
