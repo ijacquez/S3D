@@ -3,7 +3,6 @@
 uniform mat4 modelview_matrix;
 uniform mat4 projection_matrix;
 
-in uint vertex;
 in vec3 in_position;
 in vec2 in_texcoord;
 

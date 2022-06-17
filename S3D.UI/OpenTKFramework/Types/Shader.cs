@@ -36,10 +36,12 @@ namespace S3D.UI.OpenTKFramework.Types {
 
         public Shader(string name, string vertexShader, string fragmentShader) {
             Name = name;
+
             Files = new[] {
                 (ShaderType.VertexShader, vertexShader),
                 (ShaderType.FragmentShader, fragmentShader),
             };
+
             Handler = CreateProgram(name, Files);
 
             foreach (UniformFieldInfo fieldInfo in GetUniforms()) {

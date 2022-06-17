@@ -3,91 +3,137 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using S3D.UI.ImGuiGlue;
+using S3D.UI.OpenTKFramework.Types;
 using S3D.UI.OpenTKFramework.Utilities;
 using System;
 
 namespace S3D.UI {
-    public class Window {
-        private readonly GameWindow _gameWindow;
+    public static class Window {
+        private static readonly Color4 _ClearColor = new Color4(0, 32, 48, 255);
 
-        private ImGuiController _imGuiController;
+        private static readonly ClearBufferMask _ClearBufferMask =
+            ClearBufferMask.ColorBufferBit |
+            ClearBufferMask.DepthBufferBit |
+            ClearBufferMask.StencilBufferBit;
 
-        private Window() {
+        public static Camera Camera { get; } = new Camera();
+
+        public static Input Input { get; }
+
+        public static string Title {
+            get => _GameWindow.Title;
+            set => _GameWindow.Title = value;
         }
 
-        public Window(string title, int width, int height) {
+        public static bool IsFocused => _GameWindow.IsFocused;
+
+        public static bool IsVisible => _GameWindow.IsVisible;
+
+        public static bool IsCursorGrabbed =>
+            (_GameWindow.CursorState == CursorState.Grabbed);
+
+        /// <summary>
+        ///   Size of this window.
+        /// </summary>
+        public static Vector2 ClientSize => _GameWindow.ClientSize;
+
+        private static readonly GameWindow _GameWindow;
+
+        // XXX: Move!
+        private static readonly ImGuiController _imGuiController;
+
+        static Window() {
             var nativeWindowSettings = new NativeWindowSettings() {
-                Title      = title,
-                Size       = new Vector2i(width, height),
                 APIVersion = new Version(4, 5),
                 Profile    = ContextProfile.Any
             };
 
-            _gameWindow = new GameWindow(GameWindowSettings.Default, nativeWindowSettings);
+            _GameWindow = new GameWindow(GameWindowSettings.Default, nativeWindowSettings);
 
-            _gameWindow.Load += OnLoad;
-            _gameWindow.Unload += OnUnload;
-            _gameWindow.Resize += OnResize;
-            _gameWindow.UpdateFrame += OnUpdateFrame;
-            _gameWindow.RenderFrame += OnRenderFrame;
-            _gameWindow.TextInput += OnTextInput;
-            _gameWindow.MouseWheel += OnMouseWheel;
+            _GameWindow.Load += OnLoad;
+            _GameWindow.Unload += OnUnload;
+            _GameWindow.Resize += OnResize;
+            _GameWindow.UpdateFrame += OnUpdateFrame;
+            _GameWindow.RenderFrame += OnRenderFrame;
+            _GameWindow.TextInput += OnTextInput;
+            _GameWindow.MouseWheel += OnMouseWheel;
+
+            // XXX: Move ImGui related stuff to its own view. This one requires
+            //      that we supply the "client size"... how?
+            _imGuiController = new ImGuiController(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
+
+            Input = new Input(_GameWindow);
         }
 
-        public event Action Load;
+        public static event Action Load;
 
-        public event Action Unload;
+        public static event Action Unload;
 
-        public event Action<FrameEventArgs> RenderFrame;
+        public static event Action<FrameEventArgs> UpdateFrame;
 
-        public void Run() {
-            _gameWindow.Run();
+        public static event Action<FrameEventArgs> RenderFrame;
+
+        public static void Run() {
+            _GameWindow.Run();
         }
 
-        private void OnLoad() {
-            _imGuiController = new ImGuiController(_gameWindow.ClientSize.X, _gameWindow.ClientSize.Y);
+        public static void GrabCursor() {
+            _GameWindow.CursorState = CursorState.Grabbed;
+        }
 
+        public static void ReleaseCursor() {
+            _GameWindow.CursorState = CursorState.Normal;
+        }
+
+        private static void OnLoad() {
             Load?.Invoke();
         }
 
-        private void OnUnload() {
+        private static void OnUnload() {
+            // XXX: Move ImGui related stuff to its own view
             _imGuiController.Dispose();
 
             Unload?.Invoke();
         }
 
-        private void OnResize(ResizeEventArgs e) {
+        private static void OnResize(ResizeEventArgs e) {
             // Update the opengl viewport
-            GL.Viewport(0, 0, _gameWindow.ClientSize.X, _gameWindow.ClientSize.Y);
+            GL.Viewport(x: 0, y: 0, _GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
 
-            // Tell ImGui of the new size
-            _imGuiController.WindowResized(_gameWindow.ClientSize.X, _gameWindow.ClientSize.Y);
+            // XXX: Move ImGui related stuff to its own view Tell ImGui of the
+            //      new size
+            _imGuiController.Resize(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
         }
 
-        private void OnUpdateFrame(FrameEventArgs e) {
-            _imGuiController.Update(_gameWindow, (float)e.Time);
+        private static void OnUpdateFrame(FrameEventArgs e) {
+            _imGuiController.Update(_GameWindow, (float)e.Time);
+
+            UpdateFrame?.Invoke(e);
         }
 
-        private void OnRenderFrame(FrameEventArgs e) {
-            GL.ClearColor(new Color4(0, 32, 48, 255));
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+        private static void OnRenderFrame(FrameEventArgs e) {
+            GL.ClearColor(_ClearColor);
+            GL.Clear(_ClearBufferMask);
 
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
             RenderFrame?.Invoke(e);
 
+            // XXX: Move ImGui related stuff to its own view
             _imGuiController.Render();
 
             DebugUtility.CheckGLError("End of frame");
 
-            _gameWindow.SwapBuffers();
+            _GameWindow.SwapBuffers();
         }
 
-        private void OnTextInput(TextInputEventArgs e) {
+        private static void OnTextInput(TextInputEventArgs e) {
+            // XXX: Move ImGui related stuff to its own view
             _imGuiController.PressChar((char)e.Unicode);
         }
 
-        private void OnMouseWheel(MouseWheelEventArgs e) {
+        private static void OnMouseWheel(MouseWheelEventArgs e) {
+            // XXX: Move ImGui related stuff to its own view
             _imGuiController.MouseScroll(e.Offset);
         }
     }

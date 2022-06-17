@@ -1,5 +1,3 @@
-using OpenTK.Mathematics;
-
 namespace S3D.UI.OpenTKFramework.Types {
     public class Mesh {
         public string Name { get; set; } = string.Empty;

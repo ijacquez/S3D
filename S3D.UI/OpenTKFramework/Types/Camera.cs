@@ -14,6 +14,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         private float _fov = MathHelper.PiOver2;
 
         public Camera() {
+            UpdateVectors();
         }
 
         public float DepthNear { get; set; }= 0.01f;

@@ -9,6 +9,9 @@ namespace S3D.UI.Views {
         protected override void OnUnload() {
         }
 
+        protected override void OnUpdateFrame(FrameEventArgs e) {
+        }
+
         protected override void OnRenderFrame(FrameEventArgs e) {
             ImGui.Button("Hello");
         }

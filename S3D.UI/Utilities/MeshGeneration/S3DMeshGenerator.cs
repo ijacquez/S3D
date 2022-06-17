@@ -1,14 +1,15 @@
+using OpenTK.Graphics.OpenGL4;
 using S3D.FileFormats;
 using S3D.UI.OpenTKFramework.Types;
 using System.Collections.Generic;
 using System.Drawing;
 
-namespace S3D.UI.Utilities {
+namespace S3D.UI.MeshUtilities {
     public static class S3DMeshGenerator {
         /// <summary>
         ///   Generate a <see cref="Mesh"/> from a <see cref="S3DObject"/>.
         /// </summary>
-        public static Mesh GenerateMesh(S3DObject s3dObject) {
+        public static Mesh Generate(S3DObject s3dObject) {
             var objectVertices = s3dObject.Vertices.AsReadOnly();
 
             List<float> vertices = new List<float>();
@@ -17,7 +18,8 @@ namespace S3D.UI.Utilities {
                 uint first = s3dFace.Indices[0];
                 uint last = s3dFace.Indices[3];
 
-                // Triangle
+                // Check if it's a triangle. The first and last vertices will be
+                // equal
                 if (first == last) {
                     var a = objectVertices[(int)s3dFace.Indices[1]]; a.Y *= -1.0f; a.Z *= -1.0f;
                     var b = objectVertices[(int)s3dFace.Indices[2]]; b.Y *= -1.0f; b.Z *= -1.0f;
@@ -30,7 +32,7 @@ namespace S3D.UI.Utilities {
                     vertices.Add(a.X); vertices.Add(a.Y); vertices.Add(a.Z); vertices.Add(u1.X); vertices.Add(1.0f - u1.Y);
                     vertices.Add(b.X); vertices.Add(b.Y); vertices.Add(b.Z); vertices.Add(u2.X); vertices.Add(1.0f - u2.Y);
                     vertices.Add(c.X); vertices.Add(c.Y); vertices.Add(c.Z); vertices.Add(u3.X); vertices.Add(1.0f - u3.Y);
-                } else if (first != last) { // Quad
+                } else if (first != last) { // Otherwise, it's a quad
                     var a = objectVertices[(int)s3dFace.Indices[1]]; a.Y *= -1.0f; a.Z *= -1.0f;
                     var b = objectVertices[(int)s3dFace.Indices[2]]; b.Y *= -1.0f; b.Z *= -1.0f;
                     var c = objectVertices[(int)s3dFace.Indices[3]]; c.Y *= -1.0f; c.Z *= -1.0f;
@@ -58,7 +60,10 @@ namespace S3D.UI.Utilities {
             }
 
             // XXX: Change texture name
-            Texture texture = new Texture("Saturn", Bitmap.FromFile("map_d03_01.png") as Bitmap, generateMipmaps: false, srgb: true);
+            Texture texture = new Texture("mesh_generation", Bitmap.FromFile("map_d03_01.png") as Bitmap, generateMipmaps: false, srgb: true);
+
+            texture.SetMinFilter(TextureMinFilter.Nearest);
+            texture.SetMagFilter(TextureMagFilter.Nearest);
 
             Mesh mesh = new Mesh();
 

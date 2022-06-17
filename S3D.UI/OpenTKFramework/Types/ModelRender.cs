@@ -13,8 +13,6 @@ namespace S3D.UI.OpenTKFramework.Types {
         private int _vbo;
         private int _vao;
 
-        public static Camera Camera { get; set; }
-
         public Model Model { get; }
 
         public Shader Shader { get; private set; }
@@ -69,9 +67,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         public void Render() {
-            if (Camera == null) {
-                return;
-            }
+            Camera camera = Window.Camera;
 
             // XXX: Fix this
             Mesh mesh = Model.Meshes[0];
@@ -81,8 +77,8 @@ namespace S3D.UI.OpenTKFramework.Types {
             if (Shader != null) {
                 Shader.Bind();
 
-                var modelViewMatrix = Model.Transform * Camera.GetViewMatrix();
-                var projectionMatrix = Camera.GetProjectionMatrix();
+                var modelViewMatrix = Model.Transform * camera.GetViewMatrix();
+                var projectionMatrix = camera.GetProjectionMatrix();
 
                 Shader.SetMatrix4(_ModelViewMatrixUniformName, transpose: false, modelViewMatrix);
                 Shader.SetMatrix4(_ProjectionMatrixUniformName, transpose: false, projectionMatrix);
@@ -91,6 +87,8 @@ namespace S3D.UI.OpenTKFramework.Types {
             // XXX: Debugging
             // GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
+            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.RasterizerDiscard);
 
             GL.BindVertexArray(_vao);

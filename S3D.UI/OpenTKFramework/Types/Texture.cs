@@ -64,7 +64,9 @@ namespace S3D.UI.OpenTKFramework.Types {
 
             image.UnlockBits(data);
 
-            if (generateMipmaps) GL.GenerateTextureMipmap(Handle);
+            if (generateMipmaps) {
+                GL.GenerateTextureMipmap(Handle);
+            }
 
             GL.TextureParameter(Handle, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             DebugUtility.CheckGLError("WrapS");

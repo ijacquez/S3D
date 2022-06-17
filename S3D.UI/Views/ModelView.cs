@@ -70,7 +70,7 @@
 //         private class DisplayModel {
 //             public S3DObject S3DObject { get; }
 
-//             public Model Model { get; }
+//             public Mesh Mesh { get; }
 
 //             public bool IsActive { get; private set; }
 

@@ -1,24 +1,31 @@
+using OpenTK.Mathematics;
 using S3D.Converters;
 using S3D.FileFormats;
 using S3D.IO;
 using S3D.PaletteManagement;
 using S3D.ProjectManagement;
 using S3D.TextureManagement;
+using S3D.UI;
 using System.IO;
 using System;
 
 namespace S3D.Core {
     public class Program {
         public static void Main(string[] args) {
+            Window.Camera.Fov = 60.0f;
+            Window.Camera.DepthNear = 0.01f;
+            Window.Camera.DepthFar = 1000.0f;
+            Window.Camera.Position = new Vector3(0, 0, 10);
+
             if (args.Length != 1) {
-                UI.Window w = new UI.Window("Test", 800, 800);
+                var mainView = new UI.Views.MainView();
 
-                UI.Views.MainView mainView = new UI.Views.MainView();
+                Window.Load += mainView.Load;
+                Window.UpdateFrame += mainView.UpdateFrame;
+                Window.RenderFrame += mainView.RenderFrame;
 
-                w.Load += mainView.Load;
-                w.RenderFrame += mainView.RenderFrame;
+                Window.Run();
 
-                w.Run();
                 return;
             }
 

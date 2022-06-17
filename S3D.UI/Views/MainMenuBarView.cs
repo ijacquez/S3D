@@ -12,10 +12,16 @@ namespace S3D.UI.Views {
 
         public Action MenuAbout { get; set; }
 
+        public MainMenuBarView() {
+        }
+
         protected override void OnLoad() {
         }
-        protected override void OnUnload()
-        {
+
+        protected override void OnUnload() {
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs e) {
         }
 
         protected override void OnRenderFrame(FrameEventArgs e) {

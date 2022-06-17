@@ -56,6 +56,8 @@ void main()
         private int _windowWidth;
         private int _windowHeight;
 
+        private readonly List<char> _pressedChars = new List<char>();
+
         private System.Numerics.Vector2 _scaleFactor = System.Numerics.Vector2.One;
 
         /// <summary>
@@ -78,10 +80,11 @@ void main()
             SetPerFrameImGuiData(1.0f / 60.0f);
 
             ImGui.NewFrame();
+
             _frameBegun = true;
         }
 
-        public void WindowResized(int width, int height) {
+        public void Resize(int width, int height) {
             _windowWidth = width;
             _windowHeight = height;
         }
@@ -178,8 +181,6 @@ void main()
             io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
         }
 
-        readonly List<char> PressedChars = new List<char>();
-
         private void UpdateImGuiInput(GameWindow wnd) {
             ImGuiIOPtr io = ImGui.GetIO();
 
@@ -201,10 +202,10 @@ void main()
                 io.KeysDown[(int)key] = KeyboardState.IsKeyDown(key);
             }
 
-            foreach (var c in PressedChars) {
+            foreach (var c in _pressedChars) {
                 io.AddInputCharacter(c);
             }
-            PressedChars.Clear();
+            _pressedChars.Clear();
 
             io.KeyCtrl = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
             io.KeyAlt = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
@@ -213,7 +214,7 @@ void main()
         }
 
         internal void PressChar(char keyChar) {
-            PressedChars.Add(keyChar);
+            _pressedChars.Add(keyChar);
         }
 
         internal void MouseScroll(Vector2 offset) {
@@ -225,25 +226,25 @@ void main()
 
         private static void SetKeyMappings() {
             ImGuiIOPtr io = ImGui.GetIO();
-            io.KeyMap[(int)ImGuiKey.Tab] = (int)Keys.Tab;
-            io.KeyMap[(int)ImGuiKey.LeftArrow] = (int)Keys.Left;
+            io.KeyMap[(int)ImGuiKey.Tab]        = (int)Keys.Tab;
+            io.KeyMap[(int)ImGuiKey.LeftArrow]  = (int)Keys.Left;
             io.KeyMap[(int)ImGuiKey.RightArrow] = (int)Keys.Right;
-            io.KeyMap[(int)ImGuiKey.UpArrow] = (int)Keys.Up;
-            io.KeyMap[(int)ImGuiKey.DownArrow] = (int)Keys.Down;
-            io.KeyMap[(int)ImGuiKey.PageUp] = (int)Keys.PageUp;
-            io.KeyMap[(int)ImGuiKey.PageDown] = (int)Keys.PageDown;
-            io.KeyMap[(int)ImGuiKey.Home] = (int)Keys.Home;
-            io.KeyMap[(int)ImGuiKey.End] = (int)Keys.End;
-            io.KeyMap[(int)ImGuiKey.Delete] = (int)Keys.Delete;
-            io.KeyMap[(int)ImGuiKey.Backspace] = (int)Keys.Backspace;
-            io.KeyMap[(int)ImGuiKey.Enter] = (int)Keys.Enter;
-            io.KeyMap[(int)ImGuiKey.Escape] = (int)Keys.Escape;
-            io.KeyMap[(int)ImGuiKey.A] = (int)Keys.A;
-            io.KeyMap[(int)ImGuiKey.C] = (int)Keys.C;
-            io.KeyMap[(int)ImGuiKey.V] = (int)Keys.V;
-            io.KeyMap[(int)ImGuiKey.X] = (int)Keys.X;
-            io.KeyMap[(int)ImGuiKey.Y] = (int)Keys.Y;
-            io.KeyMap[(int)ImGuiKey.Z] = (int)Keys.Z;
+            io.KeyMap[(int)ImGuiKey.UpArrow]    = (int)Keys.Up;
+            io.KeyMap[(int)ImGuiKey.DownArrow]  = (int)Keys.Down;
+            io.KeyMap[(int)ImGuiKey.PageUp]     = (int)Keys.PageUp;
+            io.KeyMap[(int)ImGuiKey.PageDown]   = (int)Keys.PageDown;
+            io.KeyMap[(int)ImGuiKey.Home]       = (int)Keys.Home;
+            io.KeyMap[(int)ImGuiKey.End]        = (int)Keys.End;
+            io.KeyMap[(int)ImGuiKey.Delete]     = (int)Keys.Delete;
+            io.KeyMap[(int)ImGuiKey.Backspace]  = (int)Keys.Backspace;
+            io.KeyMap[(int)ImGuiKey.Enter]      = (int)Keys.Enter;
+            io.KeyMap[(int)ImGuiKey.Escape]     = (int)Keys.Escape;
+            io.KeyMap[(int)ImGuiKey.A]          = (int)Keys.A;
+            io.KeyMap[(int)ImGuiKey.C]          = (int)Keys.C;
+            io.KeyMap[(int)ImGuiKey.V]          = (int)Keys.V;
+            io.KeyMap[(int)ImGuiKey.X]          = (int)Keys.X;
+            io.KeyMap[(int)ImGuiKey.Y]          = (int)Keys.Y;
+            io.KeyMap[(int)ImGuiKey.Z]          = (int)Keys.Z;
         }
 
         private void RenderImDrawData(ImDrawDataPtr drawData) {
@@ -285,11 +286,12 @@ void main()
 
             _shader.Bind();
             _shader.SetMatrix4("projection_matrix", false, mvp);
+            // XXX: Add a method to _shader
             GL.Uniform1(_shader.GetUniformLocation("in_fontTexture"), 0);
-            DebugUtility.CheckGLError("Projection");
+            DebugUtility.CheckGLError("Uniform1");
 
             GL.BindVertexArray(_vertexArray);
-            DebugUtility.CheckGLError("VAO");
+            DebugUtility.CheckGLError("BindVertexArray");
 
             drawData.ScaleClipRects(io.DisplayFramebufferScale);
 
@@ -302,16 +304,16 @@ void main()
 
             // Render command lists
             for (int n = 0; n < drawData.CmdListsCount; n++) {
-                ImDrawListPtr cmd_list = drawData.CmdListsRange[n];
+                ImDrawListPtr cmdList = drawData.CmdListsRange[n];
 
-                GL.NamedBufferSubData(_vertexBuffer, IntPtr.Zero, cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>(), cmd_list.VtxBuffer.Data);
+                GL.NamedBufferSubData(_vertexBuffer, IntPtr.Zero, cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>(), cmdList.VtxBuffer.Data);
                 DebugUtility.CheckGLError($"Data Vert {n}");
 
-                GL.NamedBufferSubData(_indexBuffer, IntPtr.Zero, cmd_list.IdxBuffer.Size * sizeof(ushort), cmd_list.IdxBuffer.Data);
+                GL.NamedBufferSubData(_indexBuffer, IntPtr.Zero, cmdList.IdxBuffer.Size * sizeof(ushort), cmdList.IdxBuffer.Data);
                 DebugUtility.CheckGLError($"Data Idx {n}");
 
-                for (int cmdIndex = 0; cmdIndex < cmd_list.CmdBuffer.Size; cmdIndex++) {
-                    ImDrawCmdPtr pcmd = cmd_list.CmdBuffer[cmdIndex];
+                for (int cmdIndex = 0; cmdIndex < cmdList.CmdBuffer.Size; cmdIndex++) {
+                    ImDrawCmdPtr pcmd = cmdList.CmdBuffer[cmdIndex];
                     if (pcmd.UserCallback != IntPtr.Zero) {
                         throw new NotImplementedException();
                     } else {
