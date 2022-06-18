@@ -62,7 +62,7 @@ namespace S3D.UI.MeshUtilities {
             Mesh mesh = new Mesh();
 
             mesh.Name = s3dObject.Name;
-            mesh.Vertices = vertices.ToArray();
+            mesh.Vertices_Remove = vertices.ToArray();
 
             return mesh;
         }

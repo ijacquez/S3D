@@ -3,6 +3,9 @@ using OpenTK.Windowing.Common;
 using S3D.UI.OpenTKFramework.Types;
 using S3D.UI.MeshUtilities;
 using System;
+using S3D.UI.MathUtilities.Raycasting;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Graphics.OpenGL4;
 
 namespace S3D.UI.Views {
     public class MainView : View {
@@ -54,11 +57,25 @@ namespace S3D.UI.Views {
             float dt = (float)e.Time;
 
             _flyCamera.UpdateFrame(e);
+
+            // Check if fly camera is NOT moving
+            if (true && Window.Input.MouseState.IsButtonDown(MouseButton.Button1)) {
+                Vector2 origin = new Vector2(Window.Input.MouseState.X,
+                                             Window.Input.MouseState.Y);
+
+                // XXX: This should be a collider instance attached in a model
+                Mesh mesh = _model.Meshes[0];
+
+                if (Window.Camera.Cast(origin, mesh, out RaycastHitInfo hitInfo)) {
+                    Console.WriteLine($"Hit! {hitInfo.TriangleIndex}");
+
+                    int i = (int)hitInfo.TriangleIndex;
+                }
+            }
         }
 
         protected override void OnRenderFrame(FrameEventArgs e) {
             _mainMenuBarView.RenderFrame(e);
-
             float dt = (float)e.Time;
 
             _modelRender.Render();

@@ -21,11 +21,11 @@ namespace S3D.UI {
                 Window.GrabCursor();
 
                 if (keyboardState.IsKeyDown(Keys.W)) {
-                    Window.Camera.Position += Window.Camera.Front * CameraSpeed * dt; // Forward
+                    Window.Camera.Position += Window.Camera.Forward * CameraSpeed * dt; // Forward
                 }
 
                 if (keyboardState.IsKeyDown(Keys.S)) {
-                    Window.Camera.Position -= Window.Camera.Front * CameraSpeed * dt; // Backwards
+                    Window.Camera.Position -= Window.Camera.Forward * CameraSpeed * dt; // Backwards
                 }
 
                 if (keyboardState.IsKeyDown(Keys.A)) {

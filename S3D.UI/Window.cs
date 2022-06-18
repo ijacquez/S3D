@@ -44,8 +44,9 @@ namespace S3D.UI {
 
         static Window() {
             var nativeWindowSettings = new NativeWindowSettings() {
-                APIVersion = new Version(4, 5),
-                Profile    = ContextProfile.Any
+                APIVersion   = new Version(4, 5),
+                Profile      = ContextProfile.Any,
+                StartVisible = false
             };
 
             _GameWindow = new GameWindow(GameWindowSettings.Default, nativeWindowSettings);
@@ -74,6 +75,8 @@ namespace S3D.UI {
         public static event Action<FrameEventArgs> RenderFrame;
 
         public static void Run() {
+            _GameWindow.IsVisible = true;
+
             _GameWindow.Run();
         }
 

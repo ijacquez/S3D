@@ -86,7 +86,6 @@ namespace S3D.UI.OpenTKFramework.Types {
             return uniforms;
         }
 
-
         public AttribFieldInfo[] GetAttribs() {
             GL.GetProgram(Handler, GetProgramParameterName.ActiveAttributes, out int attribCount);
 
@@ -97,7 +96,7 @@ namespace S3D.UI.OpenTKFramework.Types {
 
                 AttribFieldInfo fieldInfo = new AttribFieldInfo();
 
-                fieldInfo.Location = GetAttribLocation(name);
+                fieldInfo.Location = GL.GetAttribLocation(Handler, name);
                 fieldInfo.Name = name;
                 fieldInfo.Size = Size;
                 fieldInfo.Type = Type;

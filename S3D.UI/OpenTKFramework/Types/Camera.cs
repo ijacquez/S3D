@@ -1,4 +1,7 @@
 using OpenTK.Mathematics;
+using S3D.UI.MathUtilities.Raycasting;
+using S3D.UI.MathUtilities;
+using System.Collections.Generic;
 using System;
 
 namespace S3D.UI.OpenTKFramework.Types {
@@ -28,7 +31,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         // projection matrix
         public float AspectRatio { private get; set; } = 1.667f;
 
-        public Vector3 Front { get; private set; } = -Vector3.UnitZ;
+        public Vector3 Forward { get; private set; } = -Vector3.UnitZ;
 
         public Vector3 Up { get; private set; } = Vector3.UnitY;
 
@@ -82,12 +85,105 @@ namespace S3D.UI.OpenTKFramework.Types {
         // Get the view matrix using the amazing LookAt function described more
         // in depth on the web tutorials
         public Matrix4 GetViewMatrix() {
-            return Matrix4.LookAt(Position, Position + Front, Up);
+            return Matrix4.LookAt(Position, Position + Forward, Up);
         }
 
         // Get the projection matrix using the same method we have used up until this point
         public Matrix4 GetProjectionMatrix() {
             return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, DepthNear, DepthFar);
+        }
+
+        public Vector3 ScreenToWorldspace(Vector2 screenPoint) {
+            Vector4 ndcPoint = new Vector4(new Vector3(screenPoint / Window.ClientSize), 1.0f);
+
+            var projectionMatrix = GetProjectionMatrix().Inverted();
+            var viewMatrix = GetViewMatrix().Inverted();
+
+            var wordspacePoint = ndcPoint * projectionMatrix * viewMatrix;
+
+            return new Vector3(wordspacePoint);
+        }
+
+        public bool Cast(Vector2 origin, ICollider collider, out RaycastHitInfo hitInfo) {
+            hitInfo = default(RaycastHitInfo);
+
+            Vector2 windowHalfDim = 0.5f * Window.ClientSize;
+
+            Matrix4 viewMatrix = GetViewMatrix();
+            Matrix4 projectionMatrix = GetProjectionMatrix();
+            Matrix4 mvp = viewMatrix * projectionMatrix;
+
+            // List<uint> hitIndices = new List<uint>();
+
+            float closestZ = float.PositiveInfinity;
+            uint closestIndex = uint.MaxValue;
+
+            Console.WriteLine("[H[2J");
+            for (int i = 0; i < (collider.Vertices.Length / 3); i++) {
+                Vector4 p1 = new Vector4(collider.Vertices[(i * 3) + 0], 1.0f);
+                Vector4 p2 = new Vector4(collider.Vertices[(i * 3) + 1], 1.0f);
+                Vector4 p3 = new Vector4(collider.Vertices[(i * 3) + 2], 1.0f);
+
+                // Bring the triangle into clip space
+                Vector4 tp1 = p1 * mvp;
+                Vector4 tp2 = p2 * mvp;
+                Vector4 tp3 = p3 * mvp;
+
+                // Transform to NDC space
+                Vector2 ndctp1 = tp1.Xy / tp1.W;
+                Vector2 ndctp2 = tp2.Xy / tp2.W;
+                Vector2 ndctp3 = tp3.Xy / tp3.W;
+
+                // Transform to screen space
+                Vector2 wctp1 = windowHalfDim * (ndctp1 + Vector2.One);
+                Vector2 wctp2 = windowHalfDim * (ndctp2 + Vector2.One);
+                Vector2 wctp3 = windowHalfDim * (ndctp3 + Vector2.One);
+
+                // Flip (+Y is down)
+                wctp1.Y = Window.ClientSize.Y - wctp1.Y;
+                wctp2.Y = Window.ClientSize.Y - wctp2.Y;
+                wctp3.Y = Window.ClientSize.Y - wctp3.Y;
+
+                // -> Caveat: Need model matrix ---------------> Create class that contains Mesh, and have model just create the collider
+
+                if (Triangle.PointInTriangle(origin, wctp1, wctp2, wctp3)) {
+                    Vector4 n = new Vector4(collider.Normals[i]);
+                    Vector4 tn = n * viewMatrix;
+
+                    Vector4 mp1 = p1 * viewMatrix;
+
+                    float t = Vector3.Dot(tn.Xyz, mp1.Xyz - Position) / Vector3.Dot(tn.Xyz, Forward);
+                    Vector3 point = Position + (t * Forward);
+
+                    Console.WriteLine($"{i}, {t}, {Forward}, {tn}, {point}");
+
+                    // Console.WriteLine($"{origin}, {wctp1}, {wctp2}, {wctp3}");
+                    //
+                    // hitInfo.Collider = collider;
+                    // hitInfo.TriangleIndex = (uint)i;
+                    //
+                    // hitIndices.Add((uint)i);
+                    // return false;
+                }
+            }
+
+            // if (hitIndices.Count == 0) {
+            //     return false;
+            // }
+
+            // float closestZ = float.PositiveInfinity;
+            // uint closestIndex = uint.MaxValue;
+
+            // foreach (uint hitIndex in hitIndices) {
+            //     if (
+            // }
+
+            // viewMatrix.ExtractTranslation
+
+            // hitInfo.Collider = collider;
+            // hitInfo.TriangleIndex = closestIndex;
+
+            return false;
         }
 
         private void UpdateVectors() {
@@ -100,14 +196,14 @@ namespace S3D.UI.OpenTKFramework.Types {
 
             // We need to make sure the vectors are all normalized, as otherwise
             // we would get some funky results
-            Front = Vector3.Normalize(front);
+            Forward = Vector3.Normalize(front);
 
             // Calculate both the right and the up vector using cross product.
             // Note that we are calculating the right from the global up; this
             // behaviour might not be what you need for all cameras so keep this
             // in mind if you do not want a FPS camera
-            Right = Vector3.Normalize(Vector3.Cross(Front, Vector3.UnitY));
-            Up = Vector3.Normalize(Vector3.Cross(Right, Front));
+            Right = Vector3.Normalize(Vector3.Cross(Forward, Vector3.UnitY));
+            Up = Vector3.Normalize(Vector3.Cross(Right, Forward));
         }
     }
 }
