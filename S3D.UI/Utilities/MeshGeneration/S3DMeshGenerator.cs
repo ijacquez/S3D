@@ -7,8 +7,9 @@ using System.Drawing;
 using System;
 
 namespace S3D.UI.MeshUtilities {
-
     public static class S3DMeshGenerator {
+        private static readonly Color4 _DefaultGouraudShadingColor = new Color4(0.5f, 0.5f, 0.5f, 1.0f);
+
         /// <summary>
         ///   Generate a <see cref="Mesh"/> from a <see cref="S3DObject"/>.
         /// </summary>
@@ -50,9 +51,9 @@ namespace S3D.UI.MeshUtilities {
                     texcoords.Add(new Vector2(u2.X, 1.0f - u2.Y));
                     texcoords.Add(new Vector2(u3.X, 1.0f - u3.Y));
 
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
 
                     // Console.WriteLine(s3dFace.Normal);
                     normals.Add(CalculateNormal(a1, b1, c1));
@@ -99,13 +100,17 @@ namespace S3D.UI.MeshUtilities {
                     texcoords.Add(new Vector2(v2.X, 1.0f - v2.Y));
                     texcoords.Add(new Vector2(v3.X, 1.0f - v3.Y));
 
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
+                    // Gouraud shading index order:
+                    //   First triangle:  0,1,2
+                    //   Second triangle: 0,2,1
 
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
-                    colors.Add(Color.White);
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
+
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
+                    colors.Add(_DefaultGouraudShadingColor);
 
                     // Console.WriteLine(s3dFace.Normal);
                     normals.Add(CalculateNormal(a1, b1, c1));
