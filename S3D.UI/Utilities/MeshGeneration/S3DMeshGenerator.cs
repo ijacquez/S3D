@@ -4,11 +4,11 @@ using S3D.FileFormats;
 using S3D.UI.OpenTKFramework.Types;
 using System.Collections.Generic;
 using System.Drawing;
-using System;
 
 namespace S3D.UI.MeshUtilities {
     public static class S3DMeshGenerator {
         private static readonly Color4 _DefaultGouraudShadingColor = new Color4(0.5f, 0.5f, 0.5f, 1.0f);
+        private static readonly Color4 _DefaultBaseColor           = Color4.Black;
 
         /// <summary>
         ///   Generate a <see cref="Mesh"/> from a <see cref="S3DObject"/>.
@@ -16,9 +16,11 @@ namespace S3D.UI.MeshUtilities {
         public static Mesh Generate(S3DObject s3dObject) {
             var objectVertices = s3dObject.Vertices.AsReadOnly();
 
+            List<MeshTriangleFlags> triangleFlags = new List<MeshTriangleFlags>();
             List<Vector3> vertices = new List<Vector3>();
             List<Vector2> texcoords = new List<Vector2>();
-            List<Color4> colors = new List<Color4>();
+            List<Color4> gsColors = new List<Color4>();
+            List<Color4> baseColors = new List<Color4>();
             List<Vector3> normals = new List<Vector3>();
             List<uint> indices = new List<uint>();
 
@@ -31,6 +33,11 @@ namespace S3D.UI.MeshUtilities {
                 // Check if it's a triangle. The first and last vertices_OLD will be
                 // equal
                 if (first == last) {
+                    MeshTriangleFlags flags = MeshTriangleFlags.None;
+
+                    // XXX: Remove. Check if we actually have a texture mapped
+                    flags |= MeshTriangleFlags.Textured;
+
                     var a = objectVertices[(int)s3dFace.Indices[1]]; a.Y *= -1.0f; a.Z *= -1.0f;
                     var b = objectVertices[(int)s3dFace.Indices[2]]; b.Y *= -1.0f; b.Z *= -1.0f;
                     var c = objectVertices[(int)s3dFace.Indices[3]]; c.Y *= -1.0f; c.Z *= -1.0f;
@@ -51,17 +58,27 @@ namespace S3D.UI.MeshUtilities {
                     texcoords.Add(new Vector2(u2.X, 1.0f - u2.Y));
                     texcoords.Add(new Vector2(u3.X, 1.0f - u3.Y));
 
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+
+                    baseColors.Add(_DefaultBaseColor);
 
                     // Console.WriteLine(s3dFace.Normal);
                     normals.Add(CalculateNormal(a1, b1, c1));
+
+                    triangleFlags.Add(flags);
 
                     indices.Add(indexCount);
 
                     indexCount++;
                 } else if (first != last) { // Otherwise, it's a quad
+                    MeshTriangleFlags flags1 = MeshTriangleFlags.None;
+                    MeshTriangleFlags flags2 = MeshTriangleFlags.None;
+
+                    // XXX: Remove. Check if we actually have a texture mapped
+                    flags1 |= MeshTriangleFlags.Textured;
+
                     var a = objectVertices[(int)s3dFace.Indices[1]]; a.Y *= -1.0f; a.Z *= -1.0f;
                     var b = objectVertices[(int)s3dFace.Indices[2]]; b.Y *= -1.0f; b.Z *= -1.0f;
                     var c = objectVertices[(int)s3dFace.Indices[3]]; c.Y *= -1.0f; c.Z *= -1.0f;
@@ -100,25 +117,34 @@ namespace S3D.UI.MeshUtilities {
                     texcoords.Add(new Vector2(v2.X, 1.0f - v2.Y));
                     texcoords.Add(new Vector2(v3.X, 1.0f - v3.Y));
 
-                    // Gouraud shading index order:
-                    //   First triangle:  0,1,2
-                    //   Second triangle: 0,2,1
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
 
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
+                    gsColors.Add(_DefaultGouraudShadingColor);
 
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
-                    colors.Add(_DefaultGouraudShadingColor);
+                    baseColors.Add(_DefaultBaseColor);
+                    baseColors.Add(_DefaultBaseColor);
 
                     // Console.WriteLine(s3dFace.Normal);
                     normals.Add(CalculateNormal(a1, b1, c1));
                     normals.Add(CalculateNormal(d1, e1, f1));
 
+                    // Copy over
+                    flags2 = flags1;
+
+                    flags1 |= MeshTriangleFlags.QuadrangleNext;
+                    flags2 |= MeshTriangleFlags.QuadranglePrev;
+
+                    triangleFlags.Add(flags1);
+
                     indices.Add(indexCount);
 
                     indexCount++;
+
+                    triangleFlags.Add(flags2);
 
                     indices.Add(indexCount);
 
@@ -138,12 +164,22 @@ namespace S3D.UI.MeshUtilities {
             Mesh mesh = new Mesh();
 
             mesh.Name = s3dObject.Name;
+            mesh.TriangleFlags = triangleFlags.ToArray();
             mesh.Vertices = vertices.ToArray();
             mesh.Texcoords = texcoords.ToArray();
-            mesh.GSColors = colors.ToArray();
+            mesh.GSColors = gsColors.ToArray();
+            mesh.BaseColors = baseColors.ToArray();
             mesh.Normals = normals.ToArray();
             mesh.Indices = indices.ToArray();
             mesh.Texture = texture;
+
+            mesh.SetDirty(MeshBufferType.TriangleFlags, true);
+            mesh.SetDirty(MeshBufferType.Vertices, true);
+            mesh.SetDirty(MeshBufferType.Texcoords, true);
+            mesh.SetDirty(MeshBufferType.GouraudShadingColors, true);
+            mesh.SetDirty(MeshBufferType.BaseColors, true);
+            mesh.SetDirty(MeshBufferType.Normals, true);
+            mesh.SetDirty(MeshBufferType.Indices, true);
 
             return mesh;
         }

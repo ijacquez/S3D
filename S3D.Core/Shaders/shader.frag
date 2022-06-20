@@ -6,8 +6,8 @@
 
 #define HAS_FLAGS(x) ((flags & (x)) != 0U)
 
-#define FLAGS_TEXTURED        (1U << 0U)
-#define FLAGS_GOURAUD_SHADING (1U << 1U)
+#define FLAGS_TEXTURED        (1U << 3U)
+#define FLAGS_GOURAUD_SHADING (1U << 4U)
 #define FLAGS_SELECT          (1U << 31U)
 
 uniform sampler2D texture0;

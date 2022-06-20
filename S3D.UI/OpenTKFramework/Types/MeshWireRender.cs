@@ -123,7 +123,7 @@ void main()
             if (_shader != null) {
                 int currentProgram = GL.GetInteger(GetPName.CurrentProgram);
 
-                if (currentProgram == _shader.Handler) {
+                if (currentProgram == _shader.Handle) {
                     GL.UseProgram(0);
                     _shader.Dispose();
                 }

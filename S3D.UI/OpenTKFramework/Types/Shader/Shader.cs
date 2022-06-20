@@ -9,7 +9,7 @@ namespace S3D.UI.OpenTKFramework.Types {
     public class Shader {
         public string Name { get; }
 
-        public int Handler { get; private set; }
+        public int Handle { get; private set; }
 
         private readonly Dictionary<string, int> _uniformToLocation =
             new Dictionary<string, int>();
@@ -28,7 +28,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 (ShaderType.FragmentShader, fragmentShader),
             };
 
-            Handler = CreateProgram(name, Files);
+            Handle = CreateProgram(name, Files);
 
             foreach (UniformFieldInfo fieldInfo in GetUniforms()) {
                 _uniformToLocation.Add(fieldInfo.Name, fieldInfo.Location);
@@ -40,28 +40,29 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         public void Bind() {
-            GL.UseProgram(Handler);
+            GL.UseProgram(Handle);
+            DebugUtility.CheckGLError($"GL.UseProgram({Handle})");
         }
 
         public void Dispose() {
             if (Initialized) {
-                GL.DeleteProgram(Handler);
+                GL.DeleteProgram(Handle);
 
                 Initialized = false;
             }
         }
 
         public UniformFieldInfo[] GetUniforms() {
-            GL.GetProgram(Handler, GetProgramParameterName.ActiveUniforms, out int uniformCount);
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out int uniformCount);
 
             UniformFieldInfo[] uniforms = new UniformFieldInfo[uniformCount];
 
             for (int i = 0; i < uniformCount; i++) {
-                string name = GL.GetActiveUniform(Handler, i, out int Size, out ActiveUniformType Type);
+                string name = GL.GetActiveUniform(Handle, i, out int Size, out ActiveUniformType Type);
 
                 UniformFieldInfo fieldInfo = new UniformFieldInfo();
 
-                fieldInfo.Location = GL.GetUniformLocation(Handler, name);
+                fieldInfo.Location = GL.GetUniformLocation(Handle, name);
                 fieldInfo.Name = name;
                 fieldInfo.Size = Size;
                 fieldInfo.Type = Type;
@@ -73,16 +74,16 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         public AttribFieldInfo[] GetAttribs() {
-            GL.GetProgram(Handler, GetProgramParameterName.ActiveAttributes, out int attribCount);
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveAttributes, out int attribCount);
 
             AttribFieldInfo[] attribs = new AttribFieldInfo[attribCount];
 
             for (int i = 0; i < attribCount; i++) {
-                string name = GL.GetActiveAttrib(Handler, i, out int Size, out ActiveAttribType Type);
+                string name = GL.GetActiveAttrib(Handle, i, out int Size, out ActiveAttribType Type);
 
                 AttribFieldInfo fieldInfo = new AttribFieldInfo();
 
-                fieldInfo.Location = GL.GetAttribLocation(Handler, name);
+                fieldInfo.Location = GL.GetAttribLocation(Handle, name);
                 fieldInfo.Name = name;
                 fieldInfo.Size = Size;
                 fieldInfo.Type = Type;
@@ -93,6 +94,17 @@ namespace S3D.UI.OpenTKFramework.Types {
             return attribs;
         }
 
+        public void SetInt(string uniform, int value) {
+            if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
+                System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
+            } else {
+                Bind();
+
+                GL.Uniform1(location, value);
+                DebugUtility.CheckGLError($"GL.Uniform1({Name}, {location})");
+            }
+        }
+
         public void SetFloat(string uniform, float value) {
             if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
                 System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
@@ -100,9 +112,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 Bind();
 
                 GL.Uniform1(location, value);
-                System.Console.WriteLine(value);
-                System.Console.WriteLine(location);
-                DebugUtility.CheckGLError("GL.Uniform1");
+                DebugUtility.CheckGLError($"GL.Uniform1({Name}, {location})");
             }
         }
 
@@ -113,7 +123,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 Bind();
 
                 GL.UniformMatrix4(location, transpose: transpose, ref transform);
-                DebugUtility.CheckGLError("GL.UniformMatrix4");
+                DebugUtility.CheckGLError($"GL.UniformMatrix4({Name}, {location})");
             }
         }
 
@@ -124,7 +134,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 return -1;
             }
 
-            return GL.GetUniformLocation(Handler, uniform);
+            return GL.GetUniformLocation(Handle, uniform);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,7 +143,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 System.Console.WriteLine($"The attrib '{attrib}' does not exist in the shader '{Name}'!");
             }
 
-            return GL.GetAttribLocation(Handler, attrib);
+            return GL.GetAttribLocation(Handle, attrib);
         }
 
         private int CreateProgram(string name, params (ShaderType Type, string source)[] shaderPaths) {

@@ -44,10 +44,15 @@ namespace S3D.UI.Views {
             _modelWireRender = new MeshWireRender(wireMesh);
 
             _mainMenuBarView.Load();
+
+            mesh.SetTriangleFlags(90, MeshTriangleFlags.GouraudShaded);
+            mesh.SetGouraudShadingColor(90, Color4.Red, Color4.Green, Color4.Blue, Color4.White);
         }
 
         protected override void OnUnload() {
         }
+
+        private int _lastClicked = -1;
 
         protected override void OnUpdateFrame() {
             if (!Window.IsFocused) {
@@ -60,7 +65,7 @@ namespace S3D.UI.Views {
             // Console.WriteLine(Window.Camera.Position);
 
             // Check if fly camera is NOT moving
-            if (true && Window.Input.MouseState.IsButtonDown(MouseButton.Button1)) {
+            if (true && Window.Input.MouseState.IsButtonPressed(MouseButton.Button1)) {
                 Vector2 origin = new Vector2(Window.Input.MouseState.X,
                                              Window.Input.MouseState.Y);
 
@@ -70,7 +75,33 @@ namespace S3D.UI.Views {
                 if (Window.Camera.Cast(origin, mesh, out RaycastHitInfo hitInfo)) {
                     Console.WriteLine($"Hit! {hitInfo.TriangleIndex}");
 
-                    int i = (int)hitInfo.TriangleIndex;
+                    int index1 = (int)hitInfo.TriangleIndex;
+                    int index2 = index1;
+
+                    var triangleFlags = mesh.GetTriangleFlags(index1);
+
+                    if ((triangleFlags & MeshTriangleFlags.Quadrangle) != 0) {
+                        if ((triangleFlags & MeshTriangleFlags.QuadrangleNext) != 0) {
+                            index2++;
+                        } else {
+                            index2--;
+                        }
+                    }
+
+                    // We need to check if we've clicked on a quad or not... use a flag
+
+                    if (_lastClicked >= 0) {
+                        mesh.ClearTriangleFlags(_lastClicked, MeshTriangleFlags.Selected);
+                    }
+
+                    // Select if not previously selected. Otherwise, deselect
+                    if ((_lastClicked == index1) || (_lastClicked == index2)) {
+                        _lastClicked = -1;
+                    } else {
+                        _lastClicked = index1;
+
+                        mesh.SetTriangleFlags(index1, MeshTriangleFlags.Selected);
+                    }
                 }
             }
         }

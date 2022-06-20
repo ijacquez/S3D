@@ -159,11 +159,11 @@ namespace S3D.UI.OpenTKFramework.Types {
 
                     // Console.WriteLine($"{origin}, {wctp1}, {wctp2}, {wctp3}");
                     //
-                    // hitInfo.Collider = collider;
-                    // hitInfo.TriangleIndex = (uint)i;
+                    hitInfo.Collider = collider;
+                    hitInfo.TriangleIndex = (uint)i;
                     //
                     // hitIndices.Add((uint)i);
-                    // return false;
+                    return true;
                 }
             }
 

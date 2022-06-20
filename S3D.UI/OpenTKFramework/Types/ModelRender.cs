@@ -1,9 +1,5 @@
-using OpenTK.Core.Native;
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
 using S3D.UI.OpenTKFramework.Utilities;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System;
 
 namespace S3D.UI.OpenTKFramework.Types {
@@ -85,73 +81,13 @@ namespace S3D.UI.OpenTKFramework.Types {
                        (_flagsBuffer.Length * sizeof(uint));
 
             _vertexTexcoordPtr = (IntPtr)0;
-            _gsColorPtr        = _vertexTexcoordPtr + (_vertexTexcoordBuffer.Length * sizeof(float));
-            _baseColorPtr      = _gsColorPtr + (_gsColorBuffer.Length * sizeof(float));
-            _flagsPtr          = _baseColorPtr + (_baseColorBuffer.Length * sizeof(float));
+            _gsColorPtr = _vertexTexcoordPtr + (_vertexTexcoordBuffer.Length * sizeof(float));
+            _baseColorPtr = _gsColorPtr + (_gsColorBuffer.Length * sizeof(float));
+            _flagsPtr = _baseColorPtr + (_baseColorBuffer.Length * sizeof(float));
 
-            PopulateVertexTexcoordBuffer(mesh, _vertexTexcoordBuffer);
-            PopulateGSColorBuffer(mesh, _gsColorBuffer);
-            PopulateBaseColorBuffer(mesh, _baseColorBuffer);
-            PopulateFlagsBuffer(mesh, _flagsBuffer);
-
-            // The Mesh class should have a "IsDirty" for every type of buffer?
-            //    Inside Render:
-            //       if (mesh.IsDirty(MeshBufferType.Color)) {
-            //          ProcessColors again
-            //          Upload
-            //       }
-            //
-            //       if (mesh.IsDirty(MeshBufferType.BaseColor)) {
-            //          ProcessBaseColors again
-            //          Upload
-            //       }
-            //
-            // For this to work, you need to have a mesh.SetDirty(MeshBufferType) as well...
-            //    This would be set in the view (think MainView/ModelView)
-
-            // XXX: Figure out how to have textureless prims but still have gouraud shading
-            //             Maybe specify a color in the postexcoord buffer
-
-            int n = 101;
-            _flagsBuffer[(n * 3)] &= ~(uint)1 << 0;
-            _flagsBuffer[((n - 1) * 3) + 0] &= ~(uint)1 << 0;
-
-            _flagsBuffer[(n * 3)] |= (uint)1 << 1;
-            _flagsBuffer[((n - 1) * 3) + 0] |= (uint)1 << 1;
-
-            // _flagsBuffer[(n * 3)] |= (uint)1 << 31;
-            // _flagsBuffer[((n - 1) * 3) + 0] |= (uint)1 << 31;
-
-            _gsColorBuffer[(n * 9) + 0] = 1.0f; _gsColorBuffer[(n * 9) + 1] = 0.0f; _gsColorBuffer[(n * 9) + 2] = 0.0f;
-            _gsColorBuffer[(n * 9) + 3] = 0.0f; _gsColorBuffer[(n * 9) + 4] = 1.0f; _gsColorBuffer[(n * 9) + 5] = 0.0f;
-            _gsColorBuffer[(n * 9) + 6] = 0.0f; _gsColorBuffer[(n * 9) + 7] = 0.0f; _gsColorBuffer[(n * 9) + 8] = 1.0f;
-
-            _baseColorBuffer[(n * 9) + 0] = 1.0f; _baseColorBuffer[(n * 9) + 1] = 0.0f; _baseColorBuffer[(n * 9) + 2] = 0.0f;
-            _baseColorBuffer[((n - 1) * 9) + 0] = 0.5f; _baseColorBuffer[((n - 1) * 9) + 1] = 0.5f; _baseColorBuffer[((n - 1) * 9) + 2] = 0.5f;
-
             _vboHandle = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vboHandle);
             GL.BufferData(BufferTarget.ArrayBuffer, _vboSize, (IntPtr)0, BufferUsageHint.StaticDraw);
-
-            GL.BufferSubData(BufferTarget.ArrayBuffer,
-                             _vertexTexcoordPtr,
-                             _vertexTexcoordBuffer.Length * sizeof(float),
-                             _vertexTexcoordBuffer);
-
-            GL.BufferSubData(BufferTarget.ArrayBuffer,
-                             _gsColorPtr,
-                             _gsColorBuffer.Length * sizeof(float),
-                             _gsColorBuffer);
-
-            GL.BufferSubData(BufferTarget.ArrayBuffer,
-                             _baseColorPtr,
-                             _baseColorBuffer.Length * sizeof(float),
-                             _baseColorBuffer);
-
-            GL.BufferSubData(BufferTarget.ArrayBuffer,
-                             _flagsPtr,
-                             _flagsBuffer.Length * sizeof(uint),
-                             _flagsBuffer);
         }
 
         public void SetShader(Shader shader) {
@@ -254,6 +190,12 @@ namespace S3D.UI.OpenTKFramework.Types {
 
             GL.BindVertexArray(_vaoHandle);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vboHandle);
+
+            UploadVertexTexcoordBuffer();
+            UploadGSColorBuffer();
+            UploadBaseColorBuffer();
+            UploadFlagsBuffer();
+
             GL.DrawArrays(PrimitiveType.Triangles, first: 0, (_vertexTexcoordBuffer.Length / 5));
             DebugUtility.CheckGLError("Render");
         }
@@ -276,10 +218,74 @@ namespace S3D.UI.OpenTKFramework.Types {
             if (Shader != null) {
                 int currentProgram = GL.GetInteger(GetPName.CurrentProgram);
 
-                if (currentProgram == Shader.Handler) {
+                if (currentProgram == Shader.Handle) {
                     GL.UseProgram(0);
                     Shader.Dispose();
                 }
+            }
+        }
+
+        private void UploadVertexTexcoordBuffer() {
+            // XXX: Fix this
+            Mesh mesh = Model.Meshes[0];
+
+            if (mesh.IsDirty(MeshBufferType.Vertices)) {
+                PopulateVertexTexcoordBuffer(mesh, _vertexTexcoordBuffer);
+
+                GL.BufferSubData(BufferTarget.ArrayBuffer,
+                                 _vertexTexcoordPtr,
+                                 _vertexTexcoordBuffer.Length * sizeof(float),
+                                 _vertexTexcoordBuffer);
+
+                mesh.SetDirty(MeshBufferType.Vertices, false);
+            }
+        }
+
+        private void UploadGSColorBuffer() {
+            // XXX: Fix this
+            Mesh mesh = Model.Meshes[0];
+
+            if (mesh.IsDirty(MeshBufferType.GouraudShadingColors)) {
+                PopulateGSColorBuffer(mesh, _gsColorBuffer);
+
+                GL.BufferSubData(BufferTarget.ArrayBuffer,
+                                 _gsColorPtr,
+                                 _gsColorBuffer.Length * sizeof(float),
+                                 _gsColorBuffer);
+
+                mesh.SetDirty(MeshBufferType.GouraudShadingColors, false);
+            }
+        }
+
+        private void UploadBaseColorBuffer() {
+            // XXX: Fix this
+            Mesh mesh = Model.Meshes[0];
+
+            if (mesh.IsDirty(MeshBufferType.BaseColors)) {
+                PopulateBaseColorBuffer(mesh, _baseColorBuffer);
+
+                GL.BufferSubData(BufferTarget.ArrayBuffer,
+                                 _baseColorPtr,
+                                 _baseColorBuffer.Length * sizeof(float),
+                                 _baseColorBuffer);
+
+                mesh.SetDirty(MeshBufferType.BaseColors, false);
+            }
+        }
+
+        private void UploadFlagsBuffer() {
+            // XXX: Fix this
+            Mesh mesh = Model.Meshes[0];
+
+            if (mesh.IsDirty(MeshBufferType.TriangleFlags)) {
+                PopulateFlagsBuffer(mesh, _flagsBuffer);
+
+                GL.BufferSubData(BufferTarget.ArrayBuffer,
+                                 _flagsPtr,
+                                 _flagsBuffer.Length * sizeof(uint),
+                                 _flagsBuffer);
+
+                mesh.SetDirty(MeshBufferType.TriangleFlags, false);
             }
         }
 
@@ -319,21 +325,15 @@ namespace S3D.UI.OpenTKFramework.Types {
                 return;
             }
 
-            for (int i = 0, j = 0, v = 0; i < mesh.Indices.Length; i++) {
-                for (int primitive = 0; primitive < 3; primitive++) {
-                    buffer[j + 0] = gsColors[v].R; buffer[j + 1] = gsColors[v].G; buffer[j + 2] = gsColors[v].B;
-                    v++;
-                    j += 3;
-                }
+            for (int i = 0, v = 0; i < mesh.Indices.Length; i++) {
+                buffer[(i * 3) + 0] = gsColors[v].R; buffer[(i * 3) + 1] = gsColors[v].G; buffer[(i * 3) + 2] = gsColors[v].B;
+                v++;
             }
         }
 
         private static void PopulateFlagsBuffer(Mesh mesh, uint[] buffer) {
-            // XXX: Ideally, we would get an array of an enum that has a bunch
-            //      of flags for us to set, or maybe this gets passed already to
-            //      us
             for (int i = 0; i < mesh.Indices.Length; i++) {
-                buffer[i * 3] = 1 << 0;
+                buffer[i * 3] = (uint)mesh.TriangleFlags[i];
             }
         }
     }

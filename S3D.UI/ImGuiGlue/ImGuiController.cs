@@ -276,17 +276,18 @@ void main()
 
             // Setup orthographic projection matrix into our constant buffer
             ImGuiIOPtr io = ImGui.GetIO();
+
             Matrix4 mvp = Matrix4.CreateOrthographicOffCenter(
-                              0.0f,
-                              io.DisplaySize.X,
-                              io.DisplaySize.Y,
-                              0.0f,
-                              -1.0f,
-                              1.0f);
+                left:       0.0f,
+                right:     io.DisplaySize.X,
+                bottom:    io.DisplaySize.Y,
+                top:        0.0f,
+                depthNear: -1.0f,
+                depthFar:   1.0f);
 
             _shader.Bind();
             _shader.SetMatrix4("projection_matrix", false, mvp);
-            _shader.SetFloat("in_fontTexture", 0);
+            _shader.SetInt("in_fontTexture", 0);
 
             GL.BindVertexArray(_vertexArray);
             DebugUtility.CheckGLError("BindVertexArray");
