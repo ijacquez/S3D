@@ -59,7 +59,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             BitmapData data = image.LockBits(new Rectangle(0, 0, Width, Height),
                                              ImageLockMode.ReadOnly, global::System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-            GL.TextureSubImage2D(Handle, 0, 0, 0, Width, Height, PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+            GL.TextureSubImage2D(Handle, level: 0, xoffset: 0, yoffset: 0, Width, Height, PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
             DebugUtility.CheckGLError("SubImage");
 
             image.UnlockBits(data);

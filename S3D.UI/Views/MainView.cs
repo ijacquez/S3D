@@ -49,14 +49,15 @@ namespace S3D.UI.Views {
         protected override void OnUnload() {
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e) {
+        protected override void OnUpdateFrame() {
             if (!Window.IsFocused) {
                 return;
             }
 
-            float dt = (float)e.Time;
+            _flyCamera.UpdateFrame();
 
-            _flyCamera.UpdateFrame(e);
+            // Window.Camera.Position = new Vector3(0.90117437f, 9.167797f, 5.874802f);
+            // Console.WriteLine(Window.Camera.Position);
 
             // Check if fly camera is NOT moving
             if (true && Window.Input.MouseState.IsButtonDown(MouseButton.Button1)) {
@@ -74,9 +75,8 @@ namespace S3D.UI.Views {
             }
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e) {
-            _mainMenuBarView.RenderFrame(e);
-            float dt = (float)e.Time;
+        protected override void OnRenderFrame() {
+            _mainMenuBarView.RenderFrame();
 
             _modelRender.Render();
             _modelWireRender.Render();

@@ -9,15 +9,17 @@ namespace S3D.UI.OpenTKFramework.Types {
 
         public Vector2[] Texcoords { get; set; }
 
-        public Color4[] Colors { get; set; }
+        public Color4[] GSColors { get; set; }
+
+        public Color4[] BaseColors { get; set; }
 
         public Vector3[] Normals { get; set; }
 
         public uint[] Indices { get; set; }
 
-        // XXX: Remove
-        public float[] Vertices_Remove { get; set; }
-
         public Texture Texture { get; set; }
+
+        // XXX: Remove
+        public float[] LineVertices { get; set; }
     }
 }

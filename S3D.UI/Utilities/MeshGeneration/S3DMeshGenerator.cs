@@ -140,7 +140,7 @@ namespace S3D.UI.MeshUtilities {
             mesh.Name = s3dObject.Name;
             mesh.Vertices = vertices.ToArray();
             mesh.Texcoords = texcoords.ToArray();
-            mesh.Colors = colors.ToArray();
+            mesh.GSColors = colors.ToArray();
             mesh.Normals = normals.ToArray();
             mesh.Indices = indices.ToArray();
             mesh.Texture = texture;

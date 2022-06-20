@@ -57,15 +57,15 @@ void main()
             _vao = GL.GenVertexArray();
             GL.BindVertexArray(_vao);
 
-            _arraysCount = mesh.Vertices_Remove.Length / 3;
+            _arraysCount = mesh.LineVertices.Length / 3;
 
             Console.WriteLine(_arraysCount);
 
             _vbo = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
             GL.BufferData(BufferTarget.ArrayBuffer,
-                          mesh.Vertices_Remove.Length * sizeof(float),
-                          mesh.Vertices_Remove,
+                          mesh.LineVertices.Length * sizeof(float),
+                          mesh.LineVertices,
                           BufferUsageHint.StaticDraw);
 
             _shader = new Shader("mesh_wire_render", _VertexShaderSource, _FragmentShaderSource);

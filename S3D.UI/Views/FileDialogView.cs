@@ -1,5 +1,4 @@
 using ImGuiNET;
-using OpenTK.Windowing.Common;
 
 namespace S3D.UI.Views {
     public class FileDialogView : View {
@@ -9,10 +8,10 @@ namespace S3D.UI.Views {
         protected override void OnUnload() {
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e) {
+        protected override void OnUpdateFrame() {
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e) {
+        protected override void OnRenderFrame() {
             ImGui.Button("Hello");
         }
     }

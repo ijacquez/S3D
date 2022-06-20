@@ -1,6 +1,5 @@
 using System;
 using ImGuiNET;
-using OpenTK.Windowing.Common;
 
 namespace S3D.UI.Views {
     public class MainMenuBarView : View {
@@ -21,10 +20,10 @@ namespace S3D.UI.Views {
         protected override void OnUnload() {
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e) {
+        protected override void OnUpdateFrame() {
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e) {
+        protected override void OnRenderFrame() {
             if (ImGui.BeginMainMenuBar()) {
                 if (ImGui.BeginMenu("File")) {
                     if (ImGui.MenuItem("Open", "Ctrl+O")) {

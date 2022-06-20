@@ -6,20 +6,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace S3D.UI.OpenTKFramework.Types {
-    public struct UniformFieldInfo {
-        public int Location { get; set; }
-        public string Name { get; set; }
-        public int Size { get; set; }
-        public ActiveUniformType Type { get; set; }
-    }
-
-    public struct AttribFieldInfo {
-        public int Location { get; set; }
-        public string Name { get; set; }
-        public int Size { get; set; }
-        public ActiveAttribType Type { get; set; }
-    }
-
     public class Shader {
         public string Name { get; }
 
@@ -107,20 +93,34 @@ namespace S3D.UI.OpenTKFramework.Types {
             return attribs;
         }
 
+        public void SetFloat(string uniform, float value) {
+            if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
+                System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
+            } else {
+                Bind();
+
+                GL.Uniform1(location, value);
+                System.Console.WriteLine(value);
+                System.Console.WriteLine(location);
+                DebugUtility.CheckGLError("GL.Uniform1");
+            }
+        }
+
         public void SetMatrix4(string uniform, bool transpose, Matrix4 transform) {
             if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
-                Debug.Print($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
+                System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
             } else {
                 Bind();
 
                 GL.UniformMatrix4(location, transpose: transpose, ref transform);
+                DebugUtility.CheckGLError("GL.UniformMatrix4");
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetUniformLocation(string uniform) {
             if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
-                Debug.Print($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
+                System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
                 return -1;
             }
 
@@ -130,7 +130,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetAttribLocation(string attrib) {
             if (!_attribToLocation.TryGetValue(attrib, out int location)) {
-                Debug.Print($"The attrib '{attrib}' does not exist in the shader '{Name}'!");
+                System.Console.WriteLine($"The attrib '{attrib}' does not exist in the shader '{Name}'!");
             }
 
             return GL.GetAttribLocation(Handler, attrib);
@@ -153,7 +153,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
             if (success == 0) {
                 string infoLogString = GL.GetProgramInfoLog(program);
-                Debug.Print($"GL.LinkProgram had info log [{name}]:\n{infoLogString}");
+                System.Console.WriteLine($"GL.LinkProgram had info log [{name}]:\n{infoLogString}");
             }
 
             foreach (var shader in shaders) {
@@ -176,7 +176,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             if (success == 0) {
                 string infoLogString = GL.GetShaderInfoLog(shader);
 
-                Debug.Print($"GL.CompileShader for shader '{Name}' [{type}] had info log:\n{infoLogString}");
+                System.Console.WriteLine($"GL.CompileShader for shader '{Name}' [{type}] had info log:\n{infoLogString}");
             }
 
             return shader;

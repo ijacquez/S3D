@@ -1,5 +1,3 @@
-using OpenTK.Windowing.Common;
-
 namespace S3D.UI {
     public abstract class View {
         public bool IsVisible { get; private set; } = true;
@@ -15,15 +13,15 @@ namespace S3D.UI {
             OnUnload();
         }
 
-        public void UpdateFrame(FrameEventArgs e) {
+        public void UpdateFrame() {
             if (IsVisible) {
-                OnUpdateFrame(e);
+                OnUpdateFrame();
             }
         }
 
-        public void RenderFrame(FrameEventArgs e) {
+        public void RenderFrame() {
             if (IsVisible) {
-                OnRenderFrame(e);
+                OnRenderFrame();
             }
         }
 
@@ -35,8 +33,8 @@ namespace S3D.UI {
 
         protected abstract void OnUnload();
 
-        protected abstract void OnUpdateFrame(FrameEventArgs e);
+        protected abstract void OnUpdateFrame();
 
-        protected abstract void OnRenderFrame(FrameEventArgs e);
+        protected abstract void OnRenderFrame();
     }
 }

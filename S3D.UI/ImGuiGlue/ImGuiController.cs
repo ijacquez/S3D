@@ -286,9 +286,7 @@ void main()
 
             _shader.Bind();
             _shader.SetMatrix4("projection_matrix", false, mvp);
-            // XXX: Add a method to _shader
-            GL.Uniform1(_shader.GetUniformLocation("in_fontTexture"), 0);
-            DebugUtility.CheckGLError("Uniform1");
+            _shader.SetFloat("in_fontTexture", 0);
 
             GL.BindVertexArray(_vertexArray);
             DebugUtility.CheckGLError("BindVertexArray");

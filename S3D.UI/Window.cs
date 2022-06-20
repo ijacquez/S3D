@@ -70,9 +70,9 @@ namespace S3D.UI {
 
         public static event Action Unload;
 
-        public static event Action<FrameEventArgs> UpdateFrame;
+        public static event Action UpdateFrame;
 
-        public static event Action<FrameEventArgs> RenderFrame;
+        public static event Action RenderFrame;
 
         public static void Run() {
             _GameWindow.IsVisible = true;
@@ -109,9 +109,11 @@ namespace S3D.UI {
         }
 
         private static void OnUpdateFrame(FrameEventArgs e) {
-            _imGuiController.Update(_GameWindow, (float)e.Time);
+            Time.UpdateFrame(e);
 
-            UpdateFrame?.Invoke(e);
+            _imGuiController.Update(_GameWindow, Time.DeltaTime);
+
+            UpdateFrame?.Invoke();
         }
 
         private static void OnRenderFrame(FrameEventArgs e) {
@@ -120,7 +122,7 @@ namespace S3D.UI {
 
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
-            RenderFrame?.Invoke(e);
+            RenderFrame?.Invoke();
 
             // XXX: Move ImGui related stuff to its own view
             _imGuiController.Render();
