@@ -38,6 +38,8 @@ void main()
 {
     if (HAS_FLAGS(FLAGS_TEXTURED)) {
         out_color = texture(texture0, texcoord, 0);
+        // XXX: The alpha should be used for MSB
+        out_color.a = 1.0;
     } else {
         out_color = basecolor;
     }

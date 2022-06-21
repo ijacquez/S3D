@@ -1,11 +1,11 @@
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using S3D.UI.OpenTKFramework.Types;
-using S3D.UI.MeshUtilities;
-using System;
-using S3D.UI.MathUtilities.Raycasting;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using OpenTK.Graphics.OpenGL4;
+using S3D.UI.MathUtilities.Raycasting;
+using S3D.UI.MeshUtilities;
+using S3D.UI.OpenTKFramework.Types;
+using System;
 
 namespace S3D.UI.Views {
     public class MainView : View {
@@ -15,7 +15,7 @@ namespace S3D.UI.Views {
 
         private Model _model;
         private ModelRender _modelRender;
-        private MeshWireRender _modelWireRender;
+        // private MeshWireRender _modelWireRender;
 
         private readonly FlyCamera _flyCamera = new FlyCamera();
 
@@ -30,7 +30,7 @@ namespace S3D.UI.Views {
                 ProjectManagement.ProjectManager.Open("mgl1_settings.json");
 
             Mesh mesh = S3DMeshGenerator.Generate(projectSettings.Objects[0]);
-            Mesh wireMesh = S3DWireMeshGenerator.Generate(projectSettings.Objects[0]);
+            // Mesh wireMesh = S3DWireMeshGenerator.Generate(projectSettings.Objects[0]);
 
             ProjectManagement.ProjectManager.Close(projectSettings);
 
@@ -41,12 +41,16 @@ namespace S3D.UI.Views {
             _modelRender = new ModelRender(_model);
             _modelRender.SetShader(shader);
 
-            _modelWireRender = new MeshWireRender(wireMesh);
+            // _modelWireRender = new MeshWireRender(wireMesh);
 
             _mainMenuBarView.Load();
 
-            mesh.SetTriangleFlags(90, MeshTriangleFlags.GouraudShaded);
-            mesh.SetGouraudShadingColor(90, Color4.Red, Color4.Green, Color4.Blue, Color4.White);
+            foreach (var meshPrimitive in mesh.Primitives) {
+                meshPrimitive.Flags |= MeshTriangleFlags.Textured;
+            }
+
+            mesh.Primitives[55].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
+            mesh.Primitives[55].Flags |= MeshTriangleFlags.GouraudShaded;
         }
 
         protected override void OnUnload() {
@@ -73,34 +77,21 @@ namespace S3D.UI.Views {
                 Mesh mesh = _model.Meshes[0];
 
                 if (Window.Camera.Cast(origin, mesh, out RaycastHitInfo hitInfo)) {
-                    Console.WriteLine($"Hit! {hitInfo.TriangleIndex}");
+                    Console.WriteLine($"Hit! {hitInfo.PrimitiveIndex}");
 
-                    int index1 = (int)hitInfo.TriangleIndex;
-                    int index2 = index1;
-
-                    var triangleFlags = mesh.GetTriangleFlags(index1);
-
-                    if ((triangleFlags & MeshTriangleFlags.Quadrangle) != 0) {
-                        if ((triangleFlags & MeshTriangleFlags.QuadrangleNext) != 0) {
-                            index2++;
-                        } else {
-                            index2--;
-                        }
-                    }
-
-                    // We need to check if we've clicked on a quad or not... use a flag
+                    int index = (int)hitInfo.PrimitiveIndex;
 
                     if (_lastClicked >= 0) {
-                        mesh.ClearTriangleFlags(_lastClicked, MeshTriangleFlags.Selected);
+                        mesh.Primitives[_lastClicked].Flags &= ~MeshTriangleFlags.Selected;
                     }
 
                     // Select if not previously selected. Otherwise, deselect
-                    if ((_lastClicked == index1) || (_lastClicked == index2)) {
+                    if (_lastClicked == index) {
                         _lastClicked = -1;
                     } else {
-                        _lastClicked = index1;
+                        _lastClicked = index;
 
-                        mesh.SetTriangleFlags(index1, MeshTriangleFlags.Selected);
+                        mesh.Primitives[index].Flags |= MeshTriangleFlags.Selected;
                     }
                 }
             }
@@ -110,7 +101,7 @@ namespace S3D.UI.Views {
             _mainMenuBarView.RenderFrame();
 
             _modelRender.Render();
-            _modelWireRender.Render();
+            // _modelWireRender.Render();
         }
 
         private void MenuFileOpen() {

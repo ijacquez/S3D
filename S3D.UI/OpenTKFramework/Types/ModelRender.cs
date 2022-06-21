@@ -1,4 +1,5 @@
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using S3D.UI.OpenTKFramework.Utilities;
 using System;
 
@@ -23,7 +24,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         //   -------- -------
         //   vx vy vz tx ty
         //
-        //   Base color
+        //   Base flags
         //    float
         //   5
         //   ----------
@@ -70,10 +71,10 @@ namespace S3D.UI.OpenTKFramework.Types {
             _vaoHandle = GL.GenVertexArray();
             GL.BindVertexArray(_vaoHandle);
 
-            _vertexTexcoordBuffer = new float[mesh.Indices.Length * 3 * 5];
-            _gsColorBuffer = new float[mesh.Indices.Length * 3 * 3];
-            _baseColorBuffer = new float[mesh.Indices.Length * 3 * 3];
-            _flagsBuffer = new uint[mesh.Indices.Length * 3];
+            _vertexTexcoordBuffer = new float[mesh.TriangleCount * 3 * 5];
+            _gsColorBuffer = new float[mesh.TriangleCount * 3 * 3];
+            _baseColorBuffer = new float[mesh.TriangleCount * 3 * 3];
+            _flagsBuffer = new uint[mesh.TriangleCount * 3];
 
             _vboSize = (_vertexTexcoordBuffer.Length * sizeof(float)) +
                        (_gsColorBuffer.Length * sizeof(float)) +
@@ -229,7 +230,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             // XXX: Fix this
             Mesh mesh = Model.Meshes[0];
 
-            if (mesh.IsDirty(MeshBufferType.Vertices)) {
+            // if (mesh.IsDirty(MeshBufferType.Vertices)) {
                 PopulateVertexTexcoordBuffer(mesh, _vertexTexcoordBuffer);
 
                 GL.BufferSubData(BufferTarget.ArrayBuffer,
@@ -237,15 +238,15 @@ namespace S3D.UI.OpenTKFramework.Types {
                                  _vertexTexcoordBuffer.Length * sizeof(float),
                                  _vertexTexcoordBuffer);
 
-                mesh.SetDirty(MeshBufferType.Vertices, false);
-            }
+                // mesh.SetDirty(MeshBufferType.Vertices, false);
+            // }
         }
 
         private void UploadGSColorBuffer() {
             // XXX: Fix this
             Mesh mesh = Model.Meshes[0];
 
-            if (mesh.IsDirty(MeshBufferType.GouraudShadingColors)) {
+            // if (mesh.IsDirty(MeshBufferType.GouraudShadingColors)) {
                 PopulateGSColorBuffer(mesh, _gsColorBuffer);
 
                 GL.BufferSubData(BufferTarget.ArrayBuffer,
@@ -253,15 +254,15 @@ namespace S3D.UI.OpenTKFramework.Types {
                                  _gsColorBuffer.Length * sizeof(float),
                                  _gsColorBuffer);
 
-                mesh.SetDirty(MeshBufferType.GouraudShadingColors, false);
-            }
+            //     mesh.SetDirty(MeshBufferType.GouraudShadingColors, false);
+            // }
         }
 
         private void UploadBaseColorBuffer() {
             // XXX: Fix this
             Mesh mesh = Model.Meshes[0];
 
-            if (mesh.IsDirty(MeshBufferType.BaseColors)) {
+            // if (mesh.IsDirty(MeshBufferType.BaseColors)) {
                 PopulateBaseColorBuffer(mesh, _baseColorBuffer);
 
                 GL.BufferSubData(BufferTarget.ArrayBuffer,
@@ -269,15 +270,15 @@ namespace S3D.UI.OpenTKFramework.Types {
                                  _baseColorBuffer.Length * sizeof(float),
                                  _baseColorBuffer);
 
-                mesh.SetDirty(MeshBufferType.BaseColors, false);
-            }
+            //     mesh.SetDirty(MeshBufferType.BaseColors, false);
+            // }
         }
 
         private void UploadFlagsBuffer() {
             // XXX: Fix this
             Mesh mesh = Model.Meshes[0];
 
-            if (mesh.IsDirty(MeshBufferType.TriangleFlags)) {
+            // if (mesh.IsDirty(MeshBufferType.TriangleFlags)) {
                 PopulateFlagsBuffer(mesh, _flagsBuffer);
 
                 GL.BufferSubData(BufferTarget.ArrayBuffer,
@@ -285,55 +286,60 @@ namespace S3D.UI.OpenTKFramework.Types {
                                  _flagsBuffer.Length * sizeof(uint),
                                  _flagsBuffer);
 
-                mesh.SetDirty(MeshBufferType.TriangleFlags, false);
-            }
+            //     mesh.SetDirty(MeshBufferType.TriangleFlags, false);
+            // }
         }
 
         private static void PopulateVertexTexcoordBuffer(Mesh mesh, float[] buffer) {
-            var vertices = mesh.Vertices;
-            var texcoords = mesh.Texcoords;
+            for (int i = 0, stride = 0; i < mesh.PrimitiveCount; i++) {
+                MeshPrimitive meshPrimitive = mesh.Primitives[i];
 
-            for (int i = 0, j = 0, v = 0; i < mesh.Indices.Length; i++) {
-                for (int primitive = 0; primitive < 3; primitive++) {
-                    buffer[j + 0] = vertices[v].X; buffer[j + 1] = vertices[v].Y; buffer[j + 2] = vertices[v].Z; buffer[j + 3] = texcoords[v].X; buffer[j + 4] = texcoords[v].Y;
-                    v++;
-                    j += 5;
+                for (int t = 0; t < meshPrimitive.Triangles.Length; t++) {
+                    var vertices = meshPrimitive.Triangles[t].Vertices;
+                    var texcoords = meshPrimitive.Triangles[t].Texcoords;
+
+                    for (int p = 0; p < 3; p++, stride += 5) {
+                        buffer[stride + 0] = vertices[p].X; buffer[stride + 1] = vertices[p].Y; buffer[stride + 2] = vertices[p].Z; buffer[stride + 3] = texcoords[p].X; buffer[stride + 4] = texcoords[p].Y;
+                    }
                 }
             }
         }
 
         private static void PopulateGSColorBuffer(Mesh mesh, float[] buffer) {
-            var gsColors = mesh.GSColors;
+            for (int i = 0, stride = 0; i < mesh.PrimitiveCount; i++) {
+                MeshPrimitive meshPrimitive = mesh.Primitives[i];
 
-            if (mesh.GSColors == null) {
-                return;
-            }
+                for (int t = 0; t < meshPrimitive.Triangles.Length; t++) {
+                    var colors = meshPrimitive.Triangles[t].Colors;
 
-            for (int i = 0, j = 0, v = 0; i < mesh.Indices.Length; i++) {
-                for (int primitive = 0; primitive < 3; primitive++) {
-                    buffer[j + 0] = gsColors[v].R; buffer[j + 1] = gsColors[v].G; buffer[j + 2] = gsColors[v].B;
-                    v++;
-                    j += 3;
+                    for (int p = 0; p < colors.Length; p++, stride += 3) {
+                        buffer[stride + 0] = colors[p].R; buffer[stride + 1] = colors[p].G; buffer[stride + 2] = colors[p].B;
+                    }
                 }
             }
         }
 
         private static void PopulateBaseColorBuffer(Mesh mesh, float[] buffer) {
-            var gsColors = mesh.BaseColors;
+            for (int i = 0, stride = 0; i < mesh.PrimitiveCount; i++) {
+                MeshPrimitive meshPrimitive = mesh.Primitives[i];
 
-            if (mesh.BaseColors == null) {
-                return;
-            }
+                Color4 color = meshPrimitive.BaseColor;
 
-            for (int i = 0, v = 0; i < mesh.Indices.Length; i++) {
-                buffer[(i * 3) + 0] = gsColors[v].R; buffer[(i * 3) + 1] = gsColors[v].G; buffer[(i * 3) + 2] = gsColors[v].B;
-                v++;
+                for (int t = 0; t < meshPrimitive.Triangles.Length; t++, stride += 3) {
+                    buffer[stride + 0] = color.R; buffer[stride + 1] = color.G; buffer[stride + 2] = color.B;
+                }
             }
         }
 
         private static void PopulateFlagsBuffer(Mesh mesh, uint[] buffer) {
-            for (int i = 0; i < mesh.Indices.Length; i++) {
-                buffer[i * 3] = (uint)mesh.TriangleFlags[i];
+            for (int i = 0, stride = 0; i < mesh.PrimitiveCount; i++) {
+                MeshPrimitive meshPrimitive = mesh.Primitives[i];
+
+                MeshTriangleFlags flags = meshPrimitive.Flags;
+
+                for (int t = 0; t < meshPrimitive.Triangles.Length; t++, stride += 3) {
+                    buffer[stride] = (uint)flags;
+                }
             }
         }
     }

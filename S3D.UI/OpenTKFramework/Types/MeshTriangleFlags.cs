@@ -8,9 +8,7 @@ namespace S3D.UI.OpenTKFramework.Types {
     [Flags]
     public enum MeshTriangleFlags : uint {
         None           = 0,
-        Quadrangle     = QuadranglePrev | QuadrangleNext,
-        QuadranglePrev = 1U << 1,
-        QuadrangleNext = 1U << 2,
+        Quadrangle     = 1U << 0,
         Textured       = 1U << 3,
         GouraudShaded  = 1U << 4,
 

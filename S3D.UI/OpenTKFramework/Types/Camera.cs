@@ -104,7 +104,15 @@ namespace S3D.UI.OpenTKFramework.Types {
             return new Vector3(wordspacePoint);
         }
 
-        public bool Cast(Vector2 origin, ICollider collider, out RaycastHitInfo hitInfo) {
+        private class HitPrimitive {
+            public Vector3 Point { get; set; }
+
+            public uint PrimitiveIndex { get; set; }
+
+            public Vector3[] TransformedVertices { get; } = new Vector3[3];
+        }
+
+        public bool Cast(Vector2 origin, Mesh mesh, out RaycastHitInfo hitInfo) {
             hitInfo = default(RaycastHitInfo);
 
             Vector2 windowHalfDim = 0.5f * Window.ClientSize;
@@ -113,77 +121,83 @@ namespace S3D.UI.OpenTKFramework.Types {
             Matrix4 projectionMatrix = GetProjectionMatrix();
             Matrix4 mvp = viewMatrix * projectionMatrix;
 
-            // List<uint> hitIndices = new List<uint>();
-
-            float closestZ = float.PositiveInfinity;
-            uint closestIndex = uint.MaxValue;
-
-            Console.WriteLine("[H[2J");
-            for (int i = 0; i < (collider.Vertices.Length / 3); i++) {
-                Vector4 p1 = new Vector4(collider.Vertices[(i * 3) + 0], 1.0f);
-                Vector4 p2 = new Vector4(collider.Vertices[(i * 3) + 1], 1.0f);
-                Vector4 p3 = new Vector4(collider.Vertices[(i * 3) + 2], 1.0f);
-
-                // Bring the triangle into clip space
-                Vector4 tp1 = p1 * mvp;
-                Vector4 tp2 = p2 * mvp;
-                Vector4 tp3 = p3 * mvp;
-
-                // Transform to NDC space
-                Vector2 ndctp1 = tp1.Xy / tp1.W;
-                Vector2 ndctp2 = tp2.Xy / tp2.W;
-                Vector2 ndctp3 = tp3.Xy / tp3.W;
-
-                // Transform to screen space
-                Vector2 wctp1 = windowHalfDim * (ndctp1 + Vector2.One);
-                Vector2 wctp2 = windowHalfDim * (ndctp2 + Vector2.One);
-                Vector2 wctp3 = windowHalfDim * (ndctp3 + Vector2.One);
-
-                // Flip (+Y is down)
-                wctp1.Y = Window.ClientSize.Y - wctp1.Y;
-                wctp2.Y = Window.ClientSize.Y - wctp2.Y;
-                wctp3.Y = Window.ClientSize.Y - wctp3.Y;
-
-                // -> Caveat: Need model matrix ---------------> Create class that contains Mesh, and have model just create the collider
-
-                if (Triangle.PointInTriangle(origin, wctp1, wctp2, wctp3)) {
-                    Vector4 n = new Vector4(collider.Normals[i]);
-                    Vector4 tn = n * viewMatrix;
-
-                    Vector4 mp1 = p1 * viewMatrix;
-
-                    float t = Vector3.Dot(tn.Xyz, mp1.Xyz - Position) / Vector3.Dot(tn.Xyz, Forward);
-                    Vector3 point = Position + (t * Forward);
-
-                    Console.WriteLine($"{i}, {t}, {Forward}, {tn}, {point}");
-
-                    // Console.WriteLine($"{origin}, {wctp1}, {wctp2}, {wctp3}");
-                    //
-                    hitInfo.Collider = collider;
-                    hitInfo.TriangleIndex = (uint)i;
-                    //
-                    // hitIndices.Add((uint)i);
-                    return true;
-                }
-            }
-
-            // if (hitIndices.Count == 0) {
-            //     return false;
-            // }
-
+            List<HitPrimitive> hitPrimitives = new List<HitPrimitive>();
             // float closestZ = float.PositiveInfinity;
             // uint closestIndex = uint.MaxValue;
 
-            // foreach (uint hitIndex in hitIndices) {
-            //     if (
-            // }
+            Console.WriteLine("[H[2J");
 
-            // viewMatrix.ExtractTranslation
+            for (int i = 0; i < mesh.PrimitiveCount; i++) {
+                MeshPrimitive meshPrimitive = mesh.Primitives[i];
 
-            // hitInfo.Collider = collider;
-            // hitInfo.TriangleIndex = closestIndex;
+                for (int t = 0; t < meshPrimitive.Triangles.Length; t++) {
+                    var vertices = meshPrimitive.Triangles[t].Vertices;
 
-            return false;
+                    // Bring the triangle into clip space
+                    Vector3 tp0 = Vector3.TransformPerspective(vertices[0], mvp);
+                    Vector3 tp1 = Vector3.TransformPerspective(vertices[1], mvp);
+                    Vector3 tp2 = Vector3.TransformPerspective(vertices[2], mvp);
+
+                    // Transform to screen space
+                    Vector2 wctp0 = windowHalfDim * (tp0.Xy + Vector2.One);
+                    Vector2 wctp1 = windowHalfDim * (tp1.Xy + Vector2.One);
+                    Vector2 wctp2 = windowHalfDim * (tp2.Xy + Vector2.One);
+
+                    // Flip (+Y is down)
+                    wctp0.Y = Window.ClientSize.Y - wctp0.Y;
+                    wctp1.Y = Window.ClientSize.Y - wctp1.Y;
+                    wctp2.Y = Window.ClientSize.Y - wctp2.Y;
+
+                    if (Triangle.PointInTriangle(origin, wctp0, wctp1, wctp2)) {
+
+                        Vector3 tn = Vector3.TransformNormal(meshPrimitive.Normal, viewMatrix);
+                        Vector3 mp1 = Vector3.TransformVector(vertices[0], viewMatrix);
+
+                        float t0 = Vector3.Dot(tn, mp1 - Position) / Vector3.Dot(tn, Forward);
+                        Vector3 point = Position + (t0 * Forward);
+
+                        if (!float.IsNaN(point.X) && !float.IsNaN(point.Y) && !float.IsNaN(point.Z)) {
+                            var hitPrimitive = new HitPrimitive();
+
+                            hitPrimitive.TransformedVertices[0] = tp0;
+                            hitPrimitive.TransformedVertices[1] = tp1;
+                            hitPrimitive.TransformedVertices[2] = tp2;
+
+                            hitPrimitive.PrimitiveIndex = (uint)i;
+
+                            hitPrimitive.Point = point;
+
+                            hitPrimitives.Add(hitPrimitive);
+                        }
+                    }
+                }
+            }
+
+            hitPrimitives.Sort(new PointComparer());
+
+            foreach (var hitPrimitive in hitPrimitives) {
+                Console.WriteLine($"{hitPrimitive.PrimitiveIndex}, {hitPrimitive.Point}");
+            }
+
+            if (hitPrimitives.Count == 0) {
+                return false;
+            }
+
+            hitInfo.PrimitiveIndex = hitPrimitives[0].PrimitiveIndex;
+
+            return true;
+        }
+
+        private sealed class PointComparer : Comparer<HitPrimitive> {
+            public override int Compare(HitPrimitive x, HitPrimitive y) {
+                Vector3 xp = x.Point - Window.Camera.Position;
+                Vector3 yp = y.Point - Window.Camera.Position;
+
+                float diff = xp.Length - yp.Length;
+
+                return (diff < 0.0f) ? -1 : ((diff < 0.001f) ? 0 : 1);
+                // return (diff < 0.0f) ? 1 : ((diff > 0.001f) ? -1 : 0);
+            }
         }
 
         private void UpdateVectors() {
