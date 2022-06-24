@@ -6,6 +6,19 @@ using System;
 
 namespace S3D.UI.OpenTKFramework.Types {
     public class Camera {
+        private sealed class RaycastHitInfoComparer : Comparer<RaycastHitInfo> {
+            public override int Compare(RaycastHitInfo x, RaycastHitInfo y) {
+                if (MathHelper.ApproximatelyEquivalent(x.Distance, y.Distance, _Threshold)) {
+                    return 0;
+                }
+
+                return Math.Sign((x.Distance - y.Distance));
+            }
+        }
+
+        // XXX: Move this
+        private const float _Threshold = 0.001f;
+
         // Rotation around the X axis (radians)
         private float _pitch;
 
@@ -22,14 +35,14 @@ namespace S3D.UI.OpenTKFramework.Types {
 
         public float DepthNear { get; set; }= 0.01f;
 
-        public float DepthFar { get; set; } = 100.0f;
+        public float DepthFar { get; set; } = 1000.0f;
 
         // The position of the camera
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get; set; } = Vector3.Zero;
 
         // This is simply the aspect ratio of the viewport, used for the
         // projection matrix
-        public float AspectRatio { private get; set; } = 1.667f;
+        public float AspectRatio { private get; set; } = 1.7777f;
 
         public Vector3 Forward { get; private set; } = -Vector3.UnitZ;
 
@@ -47,7 +60,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 // when you are using euler angles for rotation. If you want to
                 // read more about this you can try researching a topic called
                 // gimbal lock
-                var angle = MathHelper.Clamp(value, -89.0f, 89.0f);
+                var angle = MathHelper.Clamp(value, -89.9f, 89.9f);
 
                 _pitch = MathHelper.DegreesToRadians(angle);
 
@@ -93,39 +106,50 @@ namespace S3D.UI.OpenTKFramework.Types {
             return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, DepthNear, DepthFar);
         }
 
-        public Vector3 ScreenToWorldspace(Vector2 screenPoint) {
-            Vector4 ndcPoint = new Vector4(new Vector3(screenPoint / Window.ClientSize), 1.0f);
+        public Vector3 ConvertScreenToWorldspace(Vector2 screenPoint) {
+            Vector3 ndcPoint = ConvertScreenToViewport(screenPoint);
 
-            var projectionMatrix = GetProjectionMatrix().Inverted();
-            var viewMatrix = GetViewMatrix().Inverted();
+            // XXX: Cache this iff view/projection matrices change
+            var viewMatrix = GetViewMatrix();
+            var projectionMatrix = GetProjectionMatrix();
+            var mvp = projectionMatrix * viewMatrix;
 
-            var wordspacePoint = ndcPoint * projectionMatrix * viewMatrix;
-
-            return new Vector3(wordspacePoint);
+            return Vector3.TransformPosition(ndcPoint, mvp.Inverted());
         }
 
-        private class HitPrimitive {
-            public Vector3 Point { get; set; }
-
-            public uint PrimitiveIndex { get; set; }
-
-            public Vector3[] TransformedVertices { get; } = new Vector3[3];
+        public Vector3 ConvertScreenToViewport(Vector2 screenPoint) {
+            Vector2 midPoint = (2.0f * screenPoint) / Window.ClientSize;
+            // Note the negation on Y-axis
+            // Z-axis is -1 for near plane in NDC space
+            return new Vector3(midPoint.X - 1.0f, 1.0f - midPoint.Y, -1.0f);
         }
 
-        public bool Cast(Vector2 origin, Mesh mesh, out RaycastHitInfo hitInfo) {
+        public bool Cast(Vector2 screenOrigin, Mesh mesh, out RaycastHitInfo hitInfo) {
+            Vector3 viewportOrigin = Window.Camera.ConvertScreenToViewport(screenOrigin);
+
+            return Cast(viewportOrigin, mesh, out hitInfo);
+        }
+
+        public bool Cast(Vector3 viewportPoint, Mesh mesh, out RaycastHitInfo hitInfo) {
             hitInfo = default(RaycastHitInfo);
 
-            Vector2 windowHalfDim = 0.5f * Window.ClientSize;
+            var viewMatrix = GetViewMatrix();
+            var projectionMatrix = GetProjectionMatrix();
 
-            Matrix4 viewMatrix = GetViewMatrix();
-            Matrix4 projectionMatrix = GetProjectionMatrix();
-            Matrix4 mvp = viewMatrix * projectionMatrix;
+            // Convert the origin point to a direction (into the viewport: <0,0,1>) then
+            // transform the ray from viewport to world space
 
-            List<HitPrimitive> hitPrimitives = new List<HitPrimitive>();
-            // float closestZ = float.PositiveInfinity;
-            // uint closestIndex = uint.MaxValue;
+            // From viewport to clip space
+            Vector3 clipPointZ = new Vector3(viewportPoint.X, viewportPoint.Y, -1.0f);
+            // From clip to view space
+            Vector3 viewPoint3 = Vector3.TransformVector(clipPointZ, projectionMatrix.Inverted());
+            // From view to world space
+            Vector3 viewPointZ = new Vector3(viewPoint3.X, viewPoint3.Y, -1.0f);
 
-            Console.WriteLine("[H[2J");
+            Vector3 worldPoint = Position;
+            Vector3 worldDirection = Vector3.Normalize(Vector3.TransformVector(viewPointZ, viewMatrix.Inverted()));
+
+            List<RaycastHitInfo> raycastHitInfos = new List<RaycastHitInfo>();
 
             for (int i = 0; i < mesh.PrimitiveCount; i++) {
                 MeshPrimitive meshPrimitive = mesh.Primitives[i];
@@ -133,84 +157,63 @@ namespace S3D.UI.OpenTKFramework.Types {
                 for (int t = 0; t < meshPrimitive.Triangles.Length; t++) {
                     var vertices = meshPrimitive.Triangles[t].Vertices;
 
-                    // Bring the triangle into clip space
-                    Vector3 tp0 = Vector3.TransformPerspective(vertices[0], mvp);
-                    Vector3 tp1 = Vector3.TransformPerspective(vertices[1], mvp);
-                    Vector3 tp2 = Vector3.TransformPerspective(vertices[2], mvp);
+                    // Bring the triangle into world space
+                    Vector3 p0 = vertices[0];
+                    Vector3 p1 = vertices[1];
+                    Vector3 p2 = vertices[2];
 
-                    // Transform to screen space
-                    Vector2 wctp0 = windowHalfDim * (tp0.Xy + Vector2.One);
-                    Vector2 wctp1 = windowHalfDim * (tp1.Xy + Vector2.One);
-                    Vector2 wctp2 = windowHalfDim * (tp2.Xy + Vector2.One);
+                    float nd = Vector3.Dot(meshPrimitive.Normal, worldDirection);
 
-                    // Flip (+Y is down)
-                    wctp0.Y = Window.ClientSize.Y - wctp0.Y;
-                    wctp1.Y = Window.ClientSize.Y - wctp1.Y;
-                    wctp2.Y = Window.ClientSize.Y - wctp2.Y;
+                    // Test if ray is parallel to triangle normal
+                    if (MathF.Abs(nd) < _Threshold) {
+                        break;
+                    }
 
-                    if (Triangle.PointInTriangle(origin, wctp0, wctp1, wctp2)) {
+                    // Find t0
+                    float d = -Vector3.Dot(meshPrimitive.Normal, p0);
+                    float t0 = -(Vector3.Dot(meshPrimitive.Normal, worldPoint) + d) / nd;
 
-                        Vector3 tn = Vector3.TransformNormal(meshPrimitive.Normal, viewMatrix);
-                        Vector3 mp1 = Vector3.TransformVector(vertices[0], viewMatrix);
+                    if (t0 < 0.0f) {
+                        break;
+                    }
 
-                        float t0 = Vector3.Dot(tn, mp1 - Position) / Vector3.Dot(tn, Forward);
-                        Vector3 point = Position + (t0 * Forward);
+                    Vector3 point = worldPoint + (t0 * worldDirection);
 
-                        if (!float.IsNaN(point.X) && !float.IsNaN(point.Y) && !float.IsNaN(point.Z)) {
-                            var hitPrimitive = new HitPrimitive();
+                    if (Triangle.PointInTriangle(point, meshPrimitive.Normal, p0, p1, p2)) {
+                        var raycastHitInfo = new RaycastHitInfo();
 
-                            hitPrimitive.TransformedVertices[0] = tp0;
-                            hitPrimitive.TransformedVertices[1] = tp1;
-                            hitPrimitive.TransformedVertices[2] = tp2;
+                        raycastHitInfo.PrimitiveIndex = (uint)i;
 
-                            hitPrimitive.PrimitiveIndex = (uint)i;
+                        raycastHitInfo.Point = point;
+                        raycastHitInfo.Distance = t0;
 
-                            hitPrimitive.Point = point;
-
-                            hitPrimitives.Add(hitPrimitive);
-                        }
+                        raycastHitInfos.Add(raycastHitInfo);
                     }
                 }
             }
 
-            hitPrimitives.Sort(new PointComparer());
-
-            foreach (var hitPrimitive in hitPrimitives) {
-                Console.WriteLine($"{hitPrimitive.PrimitiveIndex}, {hitPrimitive.Point}");
-            }
-
-            if (hitPrimitives.Count == 0) {
+            if (raycastHitInfos.Count == 0) {
                 return false;
             }
 
-            hitInfo.PrimitiveIndex = hitPrimitives[0].PrimitiveIndex;
+            raycastHitInfos.Sort(new RaycastHitInfoComparer());
+
+            hitInfo = raycastHitInfos[0];
 
             return true;
         }
 
-        private sealed class PointComparer : Comparer<HitPrimitive> {
-            public override int Compare(HitPrimitive x, HitPrimitive y) {
-                Vector3 xp = x.Point - Window.Camera.Position;
-                Vector3 yp = y.Point - Window.Camera.Position;
-
-                float diff = xp.Length - yp.Length;
-
-                return (diff < 0.0f) ? -1 : ((diff < 0.001f) ? 0 : 1);
-                // return (diff < 0.0f) ? 1 : ((diff > 0.001f) ? -1 : 0);
-            }
-        }
-
         private void UpdateVectors() {
-            // First, the front matrix is calculated using some basic trigonometry
-            Vector3 front = new Vector3() {
-                X = MathF.Cos(_pitch) * MathF.Cos(Yaw),
+            // First, the forward matrix is calculated using some basic trigonometry
+            Vector3 forward = new Vector3() {
+                X = MathF.Cos(_pitch) * MathF.Cos(_yaw),
                 Y = MathF.Sin(_pitch),
-                Z = MathF.Cos(_pitch) * MathF.Sin(Yaw)
+                Z = MathF.Cos(_pitch) * MathF.Sin(_yaw)
             };
 
             // We need to make sure the vectors are all normalized, as otherwise
             // we would get some funky results
-            Forward = Vector3.Normalize(front);
+            Forward = Vector3.Normalize(forward);
 
             // Calculate both the right and the up vector using cross product.
             // Note that we are calculating the right from the global up; this

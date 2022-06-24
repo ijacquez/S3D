@@ -13,9 +13,10 @@ namespace S3D.Core {
     public class Program {
         public static void Main(string[] args) {
             Window.Camera.Fov = 60.0f;
+            Window.Camera.AspectRatio = Window.ClientSize.X / Window.ClientSize.Y;
             Window.Camera.DepthNear = 0.01f;
             Window.Camera.DepthFar = 1000.0f;
-            Window.Camera.Position = new Vector3(0, 0, 10);
+            Window.Camera.Position = new Vector3(0, 0, 0);
 
             if (args.Length != 1) {
                 var mainView = new UI.Views.MainView();

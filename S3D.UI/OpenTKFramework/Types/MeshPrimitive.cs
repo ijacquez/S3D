@@ -3,11 +3,13 @@ using OpenTK.Mathematics;
 
 namespace S3D.UI.OpenTKFramework.Types {
     public class MeshPrimitive {
+        private static readonly Color4 _DefaultBaseColor = new Color4(1.0f, 0.0f, 1.0f, 1.0f);
+
         public MeshTriangleFlags Flags { get; set; }
 
         public MeshTriangle[] Triangles { get; }
 
-        public Color4 BaseColor { get; set; }
+        public Color4 BaseColor { get; set; } = _DefaultBaseColor;
 
         public Vector3 Normal { get; set; }
 
@@ -92,6 +94,8 @@ namespace S3D.UI.OpenTKFramework.Types {
             Vector3 c = Triangles[0].Vertices[2];
 
             Normal = Vector3.Cross(c - a, b - a).Normalized();
+
+            Console.WriteLine($"{a}, {b}, {c} => {Normal}");
         }
     }
 }

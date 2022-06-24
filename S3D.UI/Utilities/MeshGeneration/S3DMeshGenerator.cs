@@ -6,9 +6,6 @@ using System.Drawing;
 
 namespace S3D.UI.MeshUtilities {
     public static class S3DMeshGenerator {
-        private static readonly Color4 _DefaultGouraudShadingColor = new Color4(0.5f, 0.5f, 0.5f, 1.0f);
-        private static readonly Color4 _DefaultBaseColor           = new Color4(1.0f, 0.0f, 1.0f, 1.0f);
-
         private static readonly Matrix3 _TransformRotation =
             new Matrix3(1.0f,  0.0f,  0.0f,
                         0.0f, -1.0f,  0.0f,
@@ -56,25 +53,14 @@ namespace S3D.UI.MeshUtilities {
 
                     meshPrimitive.SetVertices(p0, p1, p2);
                     meshPrimitive.SetTexcoords(u0, u1, u2);
-
-                    meshPrimitive.SetGouraudShading(_DefaultGouraudShadingColor,
-                                                    _DefaultGouraudShadingColor,
-                                                    _DefaultGouraudShadingColor);
                 } else {
                     meshPrimitive = MeshPrimitive.CreateQuad();
 
                     meshPrimitive.SetVertices(p0, p1, p2, p3);
                     meshPrimitive.SetTexcoords(u0, u1, u2, u3);
-
-                    meshPrimitive.SetGouraudShading(_DefaultGouraudShadingColor,
-                                                    _DefaultGouraudShadingColor,
-                                                    _DefaultGouraudShadingColor,
-                                                    _DefaultGouraudShadingColor);
                 }
 
                 meshPrimitive.CalculateNormal();
-
-                meshPrimitive.BaseColor = _DefaultBaseColor;
 
                 mesh.AddPrimitive(meshPrimitive);
             }

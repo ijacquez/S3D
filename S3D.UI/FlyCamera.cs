@@ -7,15 +7,21 @@ namespace S3D.UI {
         // XXX: Move these to a S3DSettings file
         private const float CameraSpeed           = 1.5f;
         private const float PitchMouseSensitivity = 20.0f;
-        private const float YawMouseSensitivity   = 0.2f;
+        private const float YawMouseSensitivity   = 20.0f;
 
         private bool _mouseFirstMove;
+
+        public bool IsFlying { get; private set; }
 
         public void UpdateFrame() {
             var keyboardState = Window.Input.KeyboardState;
             var mouseState = Window.Input.MouseState;
 
+            IsFlying = false;
+
             if (mouseState.IsButtonDown(MouseButton.Button2)) {
+                IsFlying = true;
+
                 Window.GrabCursor();
 
                 if (keyboardState.IsKeyDown(Keys.W)) {
@@ -43,8 +49,6 @@ namespace S3D.UI {
                 }
 
                 // Calculate the offset of the mouseState position
-                // var deltaX = mouseState.X - _mouseLastPosition.X;
-                // var deltaY = mouseState.Y - _mouseLastPosition.Y;
                 Vector2 mousePosition = new Vector2(mouseState.X, mouseState.Y);
                 Vector2 delta = mouseState.Delta;
                 Vector2 clientSize = Window.ClientSize;

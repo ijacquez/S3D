@@ -1,6 +1,4 @@
-using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.MeshUtilities;
@@ -18,6 +16,8 @@ namespace S3D.UI.Views {
         // private MeshWireRender _modelWireRender;
 
         private readonly FlyCamera _flyCamera = new FlyCamera();
+
+        private int _lastPrimitiveClicked = -1;
 
         public Action OpenFile { get; set; }
 
@@ -49,14 +49,15 @@ namespace S3D.UI.Views {
                 meshPrimitive.Flags |= MeshTriangleFlags.Textured;
             }
 
-            mesh.Primitives[55].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
-            mesh.Primitives[55].Flags |= MeshTriangleFlags.GouraudShaded;
+            // mesh.Primitives[55].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
+            // mesh.Primitives[55].Flags |= MeshTriangleFlags.GouraudShaded;
+
+            // mesh.Primitives[53].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
+            // mesh.Primitives[53].Flags |= MeshTriangleFlags.GouraudShaded;
         }
 
         protected override void OnUnload() {
         }
-
-        private int _lastClicked = -1;
 
         protected override void OnUpdateFrame() {
             if (!Window.IsFocused) {
@@ -65,31 +66,23 @@ namespace S3D.UI.Views {
 
             _flyCamera.UpdateFrame();
 
-            // Window.Camera.Position = new Vector3(0.90117437f, 9.167797f, 5.874802f);
-            // Console.WriteLine(Window.Camera.Position);
+            if (!_flyCamera.IsFlying && Window.Input.MouseState.IsButtonPressed(MouseButton.Button1)) {
+                Vector2 mousePoint = new Vector2(Window.Input.MouseState.X, Window.Input.MouseState.Y);
 
-            // Check if fly camera is NOT moving
-            if (true && Window.Input.MouseState.IsButtonPressed(MouseButton.Button1)) {
-                Vector2 origin = new Vector2(Window.Input.MouseState.X,
-                                             Window.Input.MouseState.Y);
-
-                // XXX: This should be a collider instance attached in a model
                 Mesh mesh = _model.Meshes[0];
 
-                if (Window.Camera.Cast(origin, mesh, out RaycastHitInfo hitInfo)) {
-                    Console.WriteLine($"Hit! {hitInfo.PrimitiveIndex}");
-
+                if (Window.Camera.Cast(mousePoint, mesh, out RaycastHitInfo hitInfo)) {
                     int index = (int)hitInfo.PrimitiveIndex;
 
-                    if (_lastClicked >= 0) {
-                        mesh.Primitives[_lastClicked].Flags &= ~MeshTriangleFlags.Selected;
+                    if (_lastPrimitiveClicked >= 0) {
+                        mesh.Primitives[_lastPrimitiveClicked].Flags &= ~MeshTriangleFlags.Selected;
                     }
 
                     // Select if not previously selected. Otherwise, deselect
-                    if (_lastClicked == index) {
-                        _lastClicked = -1;
+                    if (_lastPrimitiveClicked == index) {
+                        _lastPrimitiveClicked = -1;
                     } else {
-                        _lastClicked = index;
+                        _lastPrimitiveClicked = index;
 
                         mesh.Primitives[index].Flags |= MeshTriangleFlags.Selected;
                     }

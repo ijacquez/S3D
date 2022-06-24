@@ -2,31 +2,28 @@ using OpenTK.Mathematics;
 
 namespace S3D.UI.MathUtilities {
     public static class Triangle {
-        public static bool PointInTriangle(Vector2 point, Vector2 p1, Vector2 p2, Vector2 p3) {
-            // p1        p2
+        public static bool PointInTriangle(Vector3 point, Vector3 normal, Vector3 p0, Vector3 p1, Vector3 p2) {
+            // p1        p0
             //  +--------+
             //   \ *    / * = point
             //    \    /
             //     \  /
             //      \/
-            //      p3
+            //      p2
 
-            bool sameSide1 = LineSameSide(point, p1, p2, p3);
-            bool sameSide2 = LineSameSide(point, p2, p1, p3);
-            bool sameSide3 = LineSameSide(point, p3, p1, p2);
+            bool sameSide1 = LineSameSide(point, normal, p0, p1);
+            bool sameSide2 = LineSameSide(point, normal, p1, p2);
+            bool sameSide3 = LineSameSide(point, normal, p2, p0);
 
             return (sameSide1 && sameSide2 && sameSide3);
         }
 
-        private static bool LineSameSide(Vector2 p1, Vector2 p2, Vector2 t1, Vector2 t2) {
-            Vector2 t2t1 = (t2 - t1);
-            Vector2 p1t1 = (p1 - t1);
-            Vector2 p2t1 = (p2 - t1);
+        private static bool LineSameSide(Vector3 point, Vector3 normal, Vector3 p0, Vector3 p1) {
+            Vector3 edge = p1 - p0;
+            Vector3 pv = point - p0;
+            Vector3 a = Vector3.Cross(pv, edge);
 
-            Vector3 cp1 = Vector3.Cross(new Vector3(t2t1), new Vector3(p1t1));
-            Vector3 cp2 = Vector3.Cross(new Vector3(t2t1), new Vector3(p2t1));
-
-            return (Vector3.Dot(cp1, cp2) >= 0.0f);
+            return (Vector3.Dot(normal, a) >= 0.0f);
         }
     }
 }
