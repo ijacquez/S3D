@@ -1,103 +1,75 @@
-// using Raylib_cs;
-// using S3D.FileFormats;
-// using System.Collections.Generic;
-// using System.Numerics;
-// using System;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using S3D.FileFormats;
+using S3D.UI.MathUtilities.Raycasting;
+using S3D.UI.MeshUtilities;
+using S3D.UI.OpenTKFramework.Types;
+using System.Collections.Generic;
+using System;
 
-// namespace S3D.UI.Views {
-//     public class ModelView : View {
-//         private Camera3D _camera = new Camera3D();
-//         private Vector3 _cubePosition = new Vector3(0.0f, 0.0f, 0.0f);
+namespace S3D.UI.Views {
+    public class ModelView : View {
+        private ModelRender _modelRender;
+        private Shader _shader;
 
-//         private readonly List<DisplayModel> _displayModels = new List<DisplayModel>();
+        private readonly ClickedMeshPrimitiveEventArgs _clickedMeshPrimitiveEventArgs =
+            new ClickedMeshPrimitiveEventArgs();
 
-//         public void Display(S3DObject s3dObject) {
-//             if (s3dObject == null) {
-//                 throw new NullReferenceException();
-//             }
+        public Model Model { get; }
 
-//             if (!IsDisplayModel(s3dObject)) {
-//                 _displayModels.Add(new DisplayModel(s3dObject));
-//             }
-//         }
+        public event EventHandler<ClickedMeshPrimitiveEventArgs> ClickedMeshPrimitive;
 
-//         public void ToggleDisplay(S3DObject s3dObject, bool active) {
-//             DisplayModel displayModel = GetDisplayModel(s3dObject);
+        public ModelView() {
+            Model = new Model();
+        }
 
-//             if (displayModel == null) {
-//                 return;
-//             }
+        public void DisplayObject(S3DObject s3dObject) {
+            Mesh mesh = S3DMeshGenerator.Generate(s3dObject);
 
-//             displayModel.Toggle(active);
-//         }
+            Model.Meshes = new Mesh[] {
+                mesh
+            };
 
-//         public void ClearDisplay() {
-//             _displayModels.Clear();
-//         }
+            // XXX: Remove
+            foreach (var meshPrimitive in mesh.Primitives) {
+                meshPrimitive.Flags |= MeshTriangleFlags.Textured;
+            }
 
-//         protected override void ViewInit() {
-//             _camera.position = new Vector3(5.0f, 5.0f, 5.0f);
-//             _camera.target = new Vector3(0.0f, 0.0f, 0.0f);
-//             _camera.up = new Vector3(0.0f, 1.0f, 0.0f);
-//             _camera.fovy = 90.0f;
-//             _camera.projection = CameraProjection.CAMERA_ORTHOGRAPHIC;
+            _modelRender = new ModelRender(Model);
+            _modelRender.SetShader(_shader);
+        }
 
-//             Raylib.SetCameraMode(_camera, CameraMode.CAMERA_FREE);
-//         }
+        protected override void OnLoad() {
+            string vertexShader = System.IO.File.ReadAllText("Shaders/shader.vert");
+            string fragmentShader = System.IO.File.ReadAllText("Shaders/shader.frag");
 
-//         protected override void ViewUpdate(float dt) {
-//             Raylib.UpdateCamera(ref _camera);
+            _shader = new Shader("model_view", vertexShader, fragmentShader);
+        }
 
-//             foreach (DisplayModel displayModel in _displayModels) {
-//                 if (displayModel.IsActive) {
-//                 }
-//             }
-//         }
+        protected override void OnUnload() {
+        }
 
-//         protected override void ViewDraw() {
-//             Raylib.BeginMode3D(_camera);
+        protected override void OnUpdateFrame() {
+            if (Window.Input.MouseState.IsButtonPressed(MouseButton.Button1)) {
+                Vector2 mousePoint = new Vector2(Window.Input.MouseState.X, Window.Input.MouseState.Y);
 
-//             Raylib.DrawCube(_cubePosition, 2.0f, 2.0f, 2.0f, Color.RED);
-//             Raylib.DrawCubeWires(_cubePosition, 2.0f, 2.0f, 2.0f, Color.MAROON);
+                Mesh mesh = Model.Meshes[0];
 
-//             Raylib.DrawGrid(1000, 5.0f);
+                if (Window.Camera.CastRay(mousePoint, mesh, out RaycastHitInfo hitInfo)) {
+                    int index = (int)hitInfo.PrimitiveIndex;
 
-//             Raylib.EndMode3D();
-//         }
-// 
-//         #region Display model
+                    _clickedMeshPrimitiveEventArgs.Mesh = mesh;
+                    _clickedMeshPrimitiveEventArgs.MeshPrimitive = mesh.Primitives[index];
+                    _clickedMeshPrimitiveEventArgs.Index = index;
+                    _clickedMeshPrimitiveEventArgs.Point = hitInfo.Point;
 
-//         private class DisplayModel {
-//             public S3DObject S3DObject { get; }
+                    ClickedMeshPrimitive?.Invoke(this, _clickedMeshPrimitiveEventArgs);
+                }
+            }
+        }
 
-//             public Mesh Mesh { get; }
-
-//             public bool IsActive { get; private set; }
-
-//             private DisplayModel() {
-//             }
-
-//             public DisplayModel(S3DObject s3dObject) {
-//                 S3DObject = s3dObject;
-//             }
-
-//             public void Toggle(bool active) {
-//                 IsActive = active;
-//             }
-//         }
-
-//         private bool IsDisplayModel(S3DObject s3dObject) {
-//             return (GetDisplayModel(s3dObject) != null);
-//         }
-
-//         private DisplayModel GetDisplayModel(S3DObject s3dObject) {
-//             return _displayModels.Find(PredicateFindS3DObject);
-
-//             bool PredicateFindS3DObject(DisplayModel x) {
-//                 return (x.S3DObject == s3dObject);
-//             }
-//         }
-
-//         #endregion
-//     }
-// }
+        protected override void OnRenderFrame() {
+            _modelRender.Render();
+        }
+    }
+}

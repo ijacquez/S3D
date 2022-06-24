@@ -124,13 +124,13 @@ namespace S3D.UI.OpenTKFramework.Types {
             return new Vector3(midPoint.X - 1.0f, 1.0f - midPoint.Y, -1.0f);
         }
 
-        public bool Cast(Vector2 screenOrigin, Mesh mesh, out RaycastHitInfo hitInfo) {
+        public bool CastRay(Vector2 screenOrigin, Mesh mesh, out RaycastHitInfo hitInfo) {
             Vector3 viewportOrigin = Window.Camera.ConvertScreenToViewport(screenOrigin);
 
-            return Cast(viewportOrigin, mesh, out hitInfo);
+            return CastRay(viewportOrigin, mesh, out hitInfo);
         }
 
-        public bool Cast(Vector3 viewportPoint, Mesh mesh, out RaycastHitInfo hitInfo) {
+        public bool CastRay(Vector3 viewportPoint, Mesh mesh, out RaycastHitInfo hitInfo) {
             hitInfo = default(RaycastHitInfo);
 
             var viewMatrix = GetViewMatrix();
