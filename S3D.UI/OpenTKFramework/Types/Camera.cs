@@ -106,7 +106,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, DepthNear, DepthFar);
         }
 
-        public Vector3 ConvertScreenToWorldspace(Vector2 screenPoint) {
+        public Vector3 ConvertScreenToWorldspace(Vector2i screenPoint) {
             Vector3 ndcPoint = ConvertScreenToViewport(screenPoint);
 
             // XXX: Cache this iff view/projection matrices change
@@ -117,17 +117,17 @@ namespace S3D.UI.OpenTKFramework.Types {
             return Vector3.TransformPosition(ndcPoint, mvp.Inverted());
         }
 
-        public Vector3 ConvertScreenToViewport(Vector2 screenPoint) {
-            Vector2 midPoint = (2.0f * screenPoint) / Window.ClientSize;
+        public Vector3 ConvertScreenToViewport(Vector2i screenPoint) {
+            Vector2 midPoint = (2.0f * (Vector2)screenPoint) / Window.ClientSize;
             // Note the negation on Y-axis
             // Z-axis is -1 for near plane in NDC space
             return new Vector3(midPoint.X - 1.0f, 1.0f - midPoint.Y, -1.0f);
         }
 
-        public bool CastRay(Vector2 screenOrigin, Mesh mesh, out RaycastHitInfo hitInfo) {
-            Vector3 viewportOrigin = Window.Camera.ConvertScreenToViewport(screenOrigin);
+        public bool CastRay(Vector2i screenPoint, Mesh mesh, out RaycastHitInfo hitInfo) {
+            Vector3 viewportPoint = Window.Camera.ConvertScreenToViewport(screenPoint);
 
-            return CastRay(viewportOrigin, mesh, out hitInfo);
+            return CastRay(viewportPoint, mesh, out hitInfo);
         }
 
         public bool CastRay(Vector3 viewportPoint, Mesh mesh, out RaycastHitInfo hitInfo) {

@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 
 namespace S3D.UI.OpenTKFramework.Utilities {
-    static class CreationUtility {
+    static class ObjectUtility {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LabelObject(ObjectLabelIdentifier objLabelIdent, int glObject, string name) {
             GL.ObjectLabel(objLabelIdent, glObject, name.Length, name);

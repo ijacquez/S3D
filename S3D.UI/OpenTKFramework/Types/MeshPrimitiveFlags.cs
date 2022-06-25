@@ -6,7 +6,7 @@ namespace S3D.UI.OpenTKFramework.Types {
     ///   vertex/fragment shaders.
     /// </summary>
     [Flags]
-    public enum MeshTriangleFlags : uint {
+    public enum MeshPrimitiveFlags : uint {
         None           = 0,
         Quadrangle     = 1U << 0,
         Textured       = 1U << 3,

@@ -335,7 +335,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             for (int i = 0, stride = 0; i < mesh.PrimitiveCount; i++) {
                 MeshPrimitive meshPrimitive = mesh.Primitives[i];
 
-                MeshTriangleFlags flags = meshPrimitive.Flags;
+                MeshPrimitiveFlags flags = meshPrimitive.Flags;
 
                 for (int t = 0; t < meshPrimitive.Triangles.Length; t++, stride += 3) {
                     buffer[stride] = (uint)flags;

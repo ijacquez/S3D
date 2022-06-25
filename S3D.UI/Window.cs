@@ -39,8 +39,8 @@ namespace S3D.UI {
 
         private static readonly GameWindow _GameWindow;
 
-        // XXX: Move!
-        private static readonly ImGuiController _imGuiController;
+        // XXX: Move! Why?
+        private static readonly ImGuiController _ImGuiController;
 
         static Window() {
             var nativeWindowSettings = new NativeWindowSettings() {
@@ -51,6 +51,14 @@ namespace S3D.UI {
 
             _GameWindow = new GameWindow(GameWindowSettings.Default, nativeWindowSettings);
 
+            // XXX: Move ImGui related stuff to its own view. This one requires
+            //      that we supply the "client size"... how?
+            _ImGuiController = new ImGuiController(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
+
+            _ImGuiController.Focus += OnImGuiFocus;
+
+            Input = new Input(_GameWindow);
+
             _GameWindow.Load += OnLoad;
             _GameWindow.Unload += OnUnload;
             _GameWindow.Resize += OnResize;
@@ -58,12 +66,6 @@ namespace S3D.UI {
             _GameWindow.RenderFrame += OnRenderFrame;
             _GameWindow.TextInput += OnTextInput;
             _GameWindow.MouseWheel += OnMouseWheel;
-
-            // XXX: Move ImGui related stuff to its own view. This one requires
-            //      that we supply the "client size"... how?
-            _imGuiController = new ImGuiController(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
-
-            Input = new Input(_GameWindow);
         }
 
         public static event Action Load;
@@ -74,18 +76,32 @@ namespace S3D.UI {
 
         public static event Action RenderFrame;
 
+        public static event Action Resize;
+
+        /// <summary>
+        /// </summary>
         public static void Run() {
             _GameWindow.IsVisible = true;
 
             _GameWindow.Run();
         }
 
+        /// <summary>
+        /// </summary>
         public static void GrabCursor() {
             _GameWindow.CursorState = CursorState.Grabbed;
         }
 
+        /// <summary>
+        /// </summary>
         public static void ReleaseCursor() {
             _GameWindow.CursorState = CursorState.Normal;
+        }
+
+        /// <summary>
+        /// </summary>
+        public static void SetSize(int width, int height) {
+            _GameWindow.Size = new Vector2i(width, height);
         }
 
         private static void OnLoad() {
@@ -94,7 +110,7 @@ namespace S3D.UI {
 
         private static void OnUnload() {
             // XXX: Move ImGui related stuff to its own view
-            _imGuiController.Dispose();
+            _ImGuiController.Dispose();
 
             Unload?.Invoke();
         }
@@ -105,13 +121,15 @@ namespace S3D.UI {
 
             // XXX: Move ImGui related stuff to its own view Tell ImGui of the
             //      new size
-            _imGuiController.Resize(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
+            _ImGuiController.Resize(_GameWindow.ClientSize.X, _GameWindow.ClientSize.Y);
+
+            Resize?.Invoke();
         }
 
         private static void OnUpdateFrame(FrameEventArgs e) {
             Time.UpdateFrame(e);
 
-            _imGuiController.Update(_GameWindow, Time.DeltaTime);
+            _ImGuiController.Update(_GameWindow, Time.DeltaTime);
 
             UpdateFrame?.Invoke();
         }
@@ -125,7 +143,7 @@ namespace S3D.UI {
             RenderFrame?.Invoke();
 
             // XXX: Move ImGui related stuff to its own view
-            _imGuiController.Render();
+            _ImGuiController.Render();
 
             DebugUtility.CheckGLError("End of frame");
 
@@ -134,12 +152,16 @@ namespace S3D.UI {
 
         private static void OnTextInput(TextInputEventArgs e) {
             // XXX: Move ImGui related stuff to its own view
-            _imGuiController.PressChar((char)e.Unicode);
+            _ImGuiController.PressChar((char)e.Unicode);
         }
 
         private static void OnMouseWheel(MouseWheelEventArgs e) {
             // XXX: Move ImGui related stuff to its own view
-            _imGuiController.MouseScroll(e.Offset);
+            _ImGuiController.MouseScroll(e.Offset);
+        }
+
+        private static void OnImGuiFocus(object sender, ImGuiFocusEventArgs e) {
+            Input.ToggleInput(!e.IsFocused);
         }
     }
 }

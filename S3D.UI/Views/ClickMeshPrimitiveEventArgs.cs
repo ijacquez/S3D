@@ -3,7 +3,9 @@ using S3D.UI.OpenTKFramework.Types;
 using System;
 
 namespace S3D.UI.Views {
-    public class ClickedMeshPrimitiveEventArgs : EventArgs {
+    public class ClickMeshPrimitiveEventArgs : EventArgs {
+        public bool MultiSelect { get; set; }
+
         public Mesh Mesh { get; set; }
 
         public MeshPrimitive MeshPrimitive { get; set; }

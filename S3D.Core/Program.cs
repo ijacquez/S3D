@@ -12,6 +12,8 @@ using System;
 namespace S3D.Core {
     public class Program {
         public static void Main(string[] args) {
+            Window.SetSize(800, 800);
+
             Window.Camera.Fov = 60.0f;
             Window.Camera.AspectRatio = Window.ClientSize.X / Window.ClientSize.Y;
             Window.Camera.DepthNear = 0.01f;

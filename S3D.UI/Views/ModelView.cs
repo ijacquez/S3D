@@ -1,10 +1,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using S3D.FileFormats;
 using S3D.UI.MathUtilities.Raycasting;
-using S3D.UI.MeshUtilities;
 using S3D.UI.OpenTKFramework.Types;
-using System.Collections.Generic;
 using System;
 
 namespace S3D.UI.Views {
@@ -12,30 +9,24 @@ namespace S3D.UI.Views {
         private ModelRender _modelRender;
         private Shader _shader;
 
-        private readonly ClickedMeshPrimitiveEventArgs _clickedMeshPrimitiveEventArgs =
-            new ClickedMeshPrimitiveEventArgs();
+        private readonly ClickMeshPrimitiveEventArgs _clickMeshPrimitiveEventArgs =
+            new ClickMeshPrimitiveEventArgs();
 
-        public Model Model { get; }
+        private Model _model { get; set; }
 
-        public event EventHandler<ClickedMeshPrimitiveEventArgs> ClickedMeshPrimitive;
+        public event EventHandler<ClickMeshPrimitiveEventArgs> ClickMeshPrimitive;
 
         public ModelView() {
-            Model = new Model();
+            _model = new Model();
         }
 
-        public void DisplayObject(S3DObject s3dObject) {
-            Mesh mesh = S3DMeshGenerator.Generate(s3dObject);
-
-            Model.Meshes = new Mesh[] {
-                mesh
-            };
-
-            // XXX: Remove
-            foreach (var meshPrimitive in mesh.Primitives) {
-                meshPrimitive.Flags |= MeshTriangleFlags.Textured;
+        public void LoadModel(Model model) {
+            if (model == null) {
+                return;
             }
 
-            _modelRender = new ModelRender(Model);
+            _model = model;
+            _modelRender = new ModelRender(_model);
             _modelRender.SetShader(_shader);
         }
 
@@ -50,26 +41,40 @@ namespace S3D.UI.Views {
         }
 
         protected override void OnUpdateFrame() {
-            if (Window.Input.MouseState.IsButtonPressed(MouseButton.Button1)) {
-                Vector2 mousePoint = new Vector2(Window.Input.MouseState.X, Window.Input.MouseState.Y);
+            if (_modelRender == null) {
+                return;
+            }
 
-                Mesh mesh = Model.Meshes[0];
+            if (!Window.Input.IsMouseFocused) {
+                return;
+            }
+
+            var mouseState = Window.Input.MouseState;
+
+            if (mouseState.IsButtonPressed(MouseButton.Button1)) {
+                Vector2i mousePoint = new Vector2i((int)mouseState.X, (int)mouseState.Y);
+
+                Mesh mesh = _model.Meshes[0];
 
                 if (Window.Camera.CastRay(mousePoint, mesh, out RaycastHitInfo hitInfo)) {
                     int index = (int)hitInfo.PrimitiveIndex;
 
-                    _clickedMeshPrimitiveEventArgs.Mesh = mesh;
-                    _clickedMeshPrimitiveEventArgs.MeshPrimitive = mesh.Primitives[index];
-                    _clickedMeshPrimitiveEventArgs.Index = index;
-                    _clickedMeshPrimitiveEventArgs.Point = hitInfo.Point;
+                    _clickMeshPrimitiveEventArgs.MultiSelect =
+                        (Window.Input.KeyboardState.IsKeyDown(Keys.LeftShift) ||
+                         Window.Input.KeyboardState.IsKeyDown(Keys.RightShift));
 
-                    ClickedMeshPrimitive?.Invoke(this, _clickedMeshPrimitiveEventArgs);
+                    _clickMeshPrimitiveEventArgs.Mesh = mesh;
+                    _clickMeshPrimitiveEventArgs.MeshPrimitive = mesh.Primitives[index];
+                    _clickMeshPrimitiveEventArgs.Index = index;
+                    _clickMeshPrimitiveEventArgs.Point = hitInfo.Point;
+
+                    ClickMeshPrimitive?.Invoke(this, _clickMeshPrimitiveEventArgs);
                 }
             }
         }
 
         protected override void OnRenderFrame() {
-            _modelRender.Render();
+            _modelRender?.Render();
         }
     }
 }

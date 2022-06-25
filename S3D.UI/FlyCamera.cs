@@ -14,6 +14,10 @@ namespace S3D.UI {
         public bool IsFlying { get; private set; }
 
         public void UpdateFrame() {
+            if (!Window.Input.IsMouseFocused) {
+                return;
+            }
+
             var keyboardState = Window.Input.KeyboardState;
             var mouseState = Window.Input.MouseState;
 

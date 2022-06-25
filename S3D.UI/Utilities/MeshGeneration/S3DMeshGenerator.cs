@@ -1,6 +1,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using S3D.FileFormats;
+using S3D.UI.OpenTKFramework.Extensions;
 using S3D.UI.OpenTKFramework.Types;
 using System.Drawing;
 
@@ -73,9 +74,7 @@ namespace S3D.UI.MeshUtilities {
         }
 
         private static Vector3 TransformVertex(System.Numerics.Vector3 vector) {
-            Vector3 cVertex = new Vector3(vector.X, vector.Y, vector.Z);
-
-            return cVertex * _TransformRotation;
+            return vector.FromNumerics() * _TransformRotation;
         }
     }
 }

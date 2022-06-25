@@ -51,7 +51,7 @@ namespace S3D.UI.OpenTKFramework.Types {
 
             DebugUtility.CheckGLError("Clear");
 
-            CreationUtility.CreateTexture(TextureTarget.Texture2D, Name, out int texture);
+            ObjectUtility.CreateTexture(TextureTarget.Texture2D, Name, out int texture);
             Handle = texture;
             GL.TextureStorage2D(Handle, MipmapLevels, InternalFormat, Width, Height);
             DebugUtility.CheckGLError("Storage2d");
@@ -99,7 +99,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             InternalFormat = srgb ? Srgb8Alpha8 : SizedInternalFormat.Rgba8;
             MipmapLevels = generateMipmaps == false ? 1 : (int)Math.Floor(Math.Log(Math.Max(Width, Height), 2));
 
-            CreationUtility.CreateTexture(TextureTarget.Texture2D, Name, out int texture);
+            ObjectUtility.CreateTexture(TextureTarget.Texture2D, Name, out int texture);
             Handle = texture;
             GL.TextureStorage2D(Handle, MipmapLevels, InternalFormat, Width, Height);
 

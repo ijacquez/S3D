@@ -147,7 +147,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         private int CreateProgram(string name, params (ShaderType Type, string source)[] shaderPaths) {
-            CreationUtility.CreateProgram(name, out int program);
+            ObjectUtility.CreateProgram(name, out int program);
 
             int[] shaders = new int[shaderPaths.Length];
             for (int i = 0; i < shaderPaths.Length; i++) {
@@ -177,7 +177,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         private int CompileShader(string name, ShaderType type, string source) {
-            CreationUtility.CreateShader(type, name, out int shader);
+            ObjectUtility.CreateShader(type, name, out int shader);
 
             GL.ShaderSource(shader, source);
             GL.CompileShader(shader);

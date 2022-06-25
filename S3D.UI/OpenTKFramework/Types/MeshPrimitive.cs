@@ -5,7 +5,7 @@ namespace S3D.UI.OpenTKFramework.Types {
     public class MeshPrimitive {
         private static readonly Color4 _DefaultBaseColor = new Color4(1.0f, 0.0f, 1.0f, 1.0f);
 
-        public MeshTriangleFlags Flags { get; set; }
+        public MeshPrimitiveFlags Flags { get; set; }
 
         public MeshTriangle[] Triangles { get; }
 
@@ -24,7 +24,7 @@ namespace S3D.UI.OpenTKFramework.Types {
             }
 
             if (triangleCount == 2) {
-                Flags |= MeshTriangleFlags.Quadrangle;
+                Flags |= MeshPrimitiveFlags.Quadrangle;
             }
         }
 
@@ -38,6 +38,19 @@ namespace S3D.UI.OpenTKFramework.Types {
             var meshPrimitive = new MeshPrimitive(2);
 
             return meshPrimitive;
+        }
+
+        public Vector3[] GetVertices() {
+            if ((Flags & MeshPrimitiveFlags.Quadrangle) == MeshPrimitiveFlags.Quadrangle) {
+                return new Vector3[] {
+                    Triangles[1].Vertices[2],
+                    Triangles[0].Vertices[0],
+                    Triangles[0].Vertices[1],
+                    Triangles[0].Vertices[2]
+                };
+            }
+
+            return Triangles[0].Vertices;
         }
 
         public void SetVertices(Vector3 p0, Vector3 p1, Vector3 p2) {

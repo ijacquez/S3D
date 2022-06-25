@@ -60,6 +60,10 @@ void main()
 
         private System.Numerics.Vector2 _scaleFactor = System.Numerics.Vector2.One;
 
+        private readonly ImGuiFocusEventArgs _imGuiFocusEventArgs = new ImGuiFocusEventArgs();
+
+        public event EventHandler<ImGuiFocusEventArgs> Focus;
+
         /// <summary>
         /// Constructs a new ImGuiController.
         /// </summary>
@@ -94,13 +98,13 @@ void main()
         }
 
         public void CreateDeviceResources() {
-            CreationUtility.CreateVertexArray("ImGui", out _vertexArray);
+            ObjectUtility.CreateVertexArray("ImGui", out _vertexArray);
 
             _vertexBufferSize = 10000;
             _indexBufferSize = 2000;
 
-            CreationUtility.CreateVertexBuffer("ImGui", out _vertexBuffer);
-            CreationUtility.CreateElementBuffer("ImGui", out _indexBuffer);
+            ObjectUtility.CreateVertexBuffer("ImGui", out _vertexBuffer);
+            ObjectUtility.CreateElementBuffer("ImGui", out _indexBuffer);
             GL.NamedBufferData(_vertexBuffer, _vertexBufferSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
             GL.NamedBufferData(_indexBuffer, _indexBufferSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
 
@@ -156,15 +160,16 @@ void main()
         /// <summary>
         /// Updates ImGui input and IO configuration state.
         /// </summary>
-        public void Update(GameWindow wnd, float deltaSeconds) {
+        public void Update(GameWindow gameWindow, float deltaSeconds) {
             if (_frameBegun) {
                 ImGui.Render();
             }
 
             SetPerFrameImGuiData(deltaSeconds);
-            UpdateImGuiInput(wnd);
+            UpdateImGuiInput(gameWindow);
 
             _frameBegun = true;
+
             ImGui.NewFrame();
         }
 
@@ -174,25 +179,24 @@ void main()
         /// </summary>
         private void SetPerFrameImGuiData(float deltaSeconds) {
             ImGuiIOPtr io = ImGui.GetIO();
-            io.DisplaySize = new System.Numerics.Vector2(
-                _windowWidth / _scaleFactor.X,
-                _windowHeight / _scaleFactor.Y);
+            io.DisplaySize = new System.Numerics.Vector2(_windowWidth / _scaleFactor.X,
+                                                         _windowHeight / _scaleFactor.Y);
             io.DisplayFramebufferScale = _scaleFactor;
             io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
         }
 
-        private void UpdateImGuiInput(GameWindow wnd) {
+        private void UpdateImGuiInput(GameWindow gameWindow) {
             ImGuiIOPtr io = ImGui.GetIO();
 
-            MouseState MouseState = wnd.MouseState;
-            KeyboardState KeyboardState = wnd.KeyboardState;
+            MouseState MouseState = gameWindow.MouseState;
+            KeyboardState KeyboardState = gameWindow.KeyboardState;
 
             io.MouseDown[0] = MouseState[MouseButton.Left];
             io.MouseDown[1] = MouseState[MouseButton.Right];
             io.MouseDown[2] = MouseState[MouseButton.Middle];
 
             var screenPoint = new Vector2i((int)MouseState.X, (int)MouseState.Y);
-            var point = screenPoint;//wnd.PointToClient(screenPoint);
+            var point = screenPoint;
             io.MousePos = new System.Numerics.Vector2(point.X, point.Y);
 
             foreach (Keys key in Enum.GetValues(typeof(Keys))) {
@@ -211,6 +215,10 @@ void main()
             io.KeyAlt = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
             io.KeyShift = KeyboardState.IsKeyDown(Keys.LeftShift) || KeyboardState.IsKeyDown(Keys.RightShift);
             io.KeySuper = KeyboardState.IsKeyDown(Keys.LeftSuper) || KeyboardState.IsKeyDown(Keys.RightSuper);
+
+            _imGuiFocusEventArgs.IsFocused = io.WantCaptureMouse || io.WantCaptureKeyboard;
+
+            Focus?.Invoke(this, _imGuiFocusEventArgs);
         }
 
         internal void PressChar(char keyChar) {
