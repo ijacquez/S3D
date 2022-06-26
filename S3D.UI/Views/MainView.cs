@@ -3,6 +3,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.MeshUtilities;
 using S3D.UI.OpenTKFramework.Types;
+using S3D.UI.Views.Events;
 using System;
 
 namespace S3D.UI.Views {
@@ -21,10 +22,13 @@ namespace S3D.UI.Views {
 
         protected override void OnLoad() {
             _mainMenuBarView.Load();
+
+            _primitivePanelView.UpdateMeshPrimitive -= OnUpdateMeshPrimitive;
+            _primitivePanelView.UpdateMeshPrimitive += OnUpdateMeshPrimitive;
             _primitivePanelView.Load();
 
-            _modelView.ClickMeshPrimitive -= OnClickedMeshPrimitive;
-            _modelView.ClickMeshPrimitive += OnClickedMeshPrimitive;
+            _modelView.ClickMeshPrimitive -= OnClickMeshPrimitive;
+            _modelView.ClickMeshPrimitive += OnClickMeshPrimitive;
             _modelView.Load();
 
             ProjectManagement.ProjectSettings projectSettings =
@@ -56,7 +60,38 @@ namespace S3D.UI.Views {
             // mesh.Primitives[53].Flags |= MeshPrimitiveFlags.GouraudShaded;
         }
 
-        private void OnClickedMeshPrimitive(object sender, ClickMeshPrimitiveEventArgs e) {
+        private void OnUpdateMeshPrimitive(object sender, UpdateMeshPrimitiveEventArgs e) {
+            switch (e.UpdateType) {
+            case MeshPrimitiveUpdateType.GouraudShading:
+                OnUpdateGouraudShading(e);
+                break;
+            }
+        }
+
+        private static void OnUpdateGouraudShading(UpdateMeshPrimitiveEventArgs e) {
+            var gouraudShading = (UpdateGouraudShadingEventArgs)e;
+
+            Console.WriteLine($"{gouraudShading.IsEnabled}");
+
+            if (gouraudShading.IsEnabled) {
+                e.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+
+                if (e.MeshPrimitive.Flags.HasFlag(MeshPrimitiveFlags.Quadrangle)) {
+                    e.MeshPrimitive.SetGouraudShading(gouraudShading.Colors[0],
+                                                      gouraudShading.Colors[1],
+                                                      gouraudShading.Colors[2],
+                                                      gouraudShading.Colors[3]);
+                } else {
+                    e.MeshPrimitive.SetGouraudShading(gouraudShading.Colors[0],
+                                                      gouraudShading.Colors[1],
+                                                      gouraudShading.Colors[2]);
+                }
+            } else {
+                e.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.GouraudShaded;
+            }
+        }
+
+        private void OnClickMeshPrimitive(object sender, ClickMeshPrimitiveEventArgs e) {
             if (_flyCamera.IsFlying) {
                 return;
             }

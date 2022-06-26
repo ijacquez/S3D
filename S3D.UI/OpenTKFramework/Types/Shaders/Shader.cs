@@ -1,9 +1,10 @@
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using S3D.UI.OpenTKFramework.Utilities;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System;
 
 namespace S3D.UI.OpenTKFramework.Types {
     public class Shader {
@@ -11,24 +12,27 @@ namespace S3D.UI.OpenTKFramework.Types {
 
         public int Handle { get; private set; }
 
+        public IReadOnlyList<ShaderSource> Sources =>
+            Array.AsReadOnly(_sources);
+
         private readonly Dictionary<string, int> _uniformToLocation =
             new Dictionary<string, int>();
         private readonly Dictionary<string, int> _attribToLocation =
             new Dictionary<string, int>();
 
-        private bool Initialized { get; set; } = false;
+        private bool _initialized;
 
-        private (ShaderType Type, string Path)[] Files { get; }
+        private readonly ShaderSource[] _sources;
 
-        public Shader(string name, string vertexShader, string fragmentShader) {
+        private Shader() {
+        }
+
+        public Shader(string name, params ShaderSource[] shaderSources) {
             Name = name;
 
-            Files = new[] {
-                (ShaderType.VertexShader, vertexShader),
-                (ShaderType.FragmentShader, fragmentShader),
-            };
+            _sources = GetUniqueSources(shaderSources);
 
-            Handle = CreateProgram(name, Files);
+            Handle = CreateProgram(name, _sources);
 
             foreach (UniformFieldInfo fieldInfo in GetUniforms()) {
                 _uniformToLocation.Add(fieldInfo.Name, fieldInfo.Location);
@@ -45,10 +49,10 @@ namespace S3D.UI.OpenTKFramework.Types {
         }
 
         public void Dispose() {
-            if (Initialized) {
+            if (_initialized) {
                 GL.DeleteProgram(Handle);
 
-                Initialized = false;
+                _initialized = false;
             }
         }
 
@@ -146,12 +150,13 @@ namespace S3D.UI.OpenTKFramework.Types {
             return GL.GetAttribLocation(Handle, attrib);
         }
 
-        private int CreateProgram(string name, params (ShaderType Type, string source)[] shaderPaths) {
+        private int CreateProgram(string name, IList<ShaderSource> sources) {
             ObjectUtility.CreateProgram(name, out int program);
 
-            int[] shaders = new int[shaderPaths.Length];
-            for (int i = 0; i < shaderPaths.Length; i++) {
-                shaders[i] = CompileShader(name, shaderPaths[i].Type, shaderPaths[i].source);
+            int[] shaders = new int[sources.Count];
+
+            for (int i = 0; i < shaders.Length; i++) {
+                shaders[i] = CompileShader(name, sources[i].Type, sources[i].Source);
             }
 
             foreach (var shader in shaders) {
@@ -171,7 +176,7 @@ namespace S3D.UI.OpenTKFramework.Types {
                 GL.DeleteShader(shader);
             }
 
-            Initialized = true;
+            _initialized = true;
 
             return program;
         }
@@ -190,6 +195,11 @@ namespace S3D.UI.OpenTKFramework.Types {
             }
 
             return shader;
+        }
+
+        private static ShaderSource[] GetUniqueSources(ShaderSource[] shaderSources) {
+            return shaderSources.Where((x) => !string.IsNullOrWhiteSpace(x.Source))
+                                .ToArray();
         }
     }
 }

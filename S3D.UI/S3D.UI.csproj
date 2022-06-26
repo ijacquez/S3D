@@ -18,5 +18,9 @@
   <ItemGroup>
     <ProjectReference Include="..\S3D\S3D.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Content Include="Resources\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

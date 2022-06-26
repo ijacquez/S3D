@@ -1,7 +1,9 @@
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.OpenTKFramework.Types;
+using S3D.UI.Views.Events;
 using System;
 
 namespace S3D.UI.Views {
@@ -31,10 +33,12 @@ namespace S3D.UI.Views {
         }
 
         protected override void OnLoad() {
-            string vertexShader = System.IO.File.ReadAllText("Shaders/shader.vert");
-            string fragmentShader = System.IO.File.ReadAllText("Shaders/shader.frag");
+            var vertexShaderSource =
+                Resources.LoadShaderSource(ShaderType.VertexShader, "Shaders/model_view.vert");
+            var fragmentShaderSource =
+                Resources.LoadShaderSource(ShaderType.FragmentShader, "Shaders/model_view.frag");
 
-            _shader = new Shader("model_view", vertexShader, fragmentShader);
+            _shader = new Shader("model_view", vertexShaderSource, fragmentShaderSource);
         }
 
         protected override void OnUnload() {

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using OpenTK.Mathematics;
 
 namespace S3D.UI.OpenTKFramework.Types {
@@ -50,7 +51,20 @@ namespace S3D.UI.OpenTKFramework.Types {
                 };
             }
 
-            return Triangles[0].Vertices;
+            return Triangles[0].Vertices.ToArray();
+        }
+
+        public Color4[] GetGouraudShadingTable() {
+            if ((Flags & MeshPrimitiveFlags.Quadrangle) == MeshPrimitiveFlags.Quadrangle) {
+                return new Color4[] {
+                    Triangles[0].Colors[2],
+                    Triangles[0].Colors[1],
+                    Triangles[0].Colors[0],
+                    Triangles[1].Colors[2]
+                };
+            }
+
+            return Triangles[0].Colors.ToArray();
         }
 
         public void SetVertices(Vector3 p0, Vector3 p1, Vector3 p2) {
@@ -107,8 +121,6 @@ namespace S3D.UI.OpenTKFramework.Types {
             Vector3 c = Triangles[0].Vertices[2];
 
             Normal = Vector3.Cross(c - a, b - a).Normalized();
-
-            Console.WriteLine($"{a}, {b}, {c} => {Normal}");
         }
     }
 }

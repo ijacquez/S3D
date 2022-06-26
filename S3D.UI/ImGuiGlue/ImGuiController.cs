@@ -1,5 +1,5 @@
 using ImGuiNET;
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -11,7 +11,11 @@ using System;
 
 namespace S3D.UI.ImGuiGlue {
     public class ImGuiController : IDisposable {
-            private const string _VertexSource = @"#version 330 core
+        private static readonly ShaderSource _VertexSource =
+            new ShaderSource() {
+                Type   = ShaderType.VertexShader,
+                Source =
+@"#version 330 core
 
 uniform mat4 projection_matrix;
 
@@ -27,8 +31,14 @@ void main()
     gl_Position = projection_matrix * vec4(in_position, 0, 1);
     color = in_color;
     texCoord = in_texCoord;
-}";
-            private const string _FragmentSource = @"#version 330 core
+}"
+            };
+
+        private static readonly ShaderSource _FragmentSource =
+            new ShaderSource() {
+            Type   = ShaderType.FragmentShader,
+            Source =
+@"#version 330 core
 
 uniform sampler2D in_fontTexture;
 
@@ -40,7 +50,8 @@ out vec4 outputColor;
 void main()
 {
     outputColor = color * texture(in_fontTexture, texCoord);
-}";
+}"
+            };
 
         private bool _frameBegun;
 

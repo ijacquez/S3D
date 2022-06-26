@@ -5,8 +5,6 @@ namespace S3D.UI.OpenTKFramework.Types {
     public class Input {
         private readonly NativeWindow _nativeWindow;
 
-        private bool _isInputActive;
-
         public KeyboardState KeyboardState => _nativeWindow.KeyboardState;
 
         public MouseState MouseState => _nativeWindow.MouseState;

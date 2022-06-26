@@ -8,5 +8,4 @@
   <ItemGroup>
     <ProjectReference Include="..\S3D.UI\S3D.UI.csproj" />
   </ItemGroup>
-
 </Project>

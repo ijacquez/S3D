@@ -1,13 +1,13 @@
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 
 namespace S3D.UI.OpenTKFramework.Types {
-    public struct UniformFieldInfo {
+    public struct AttribFieldInfo {
         public int Location { get; set; }
 
         public string Name { get; set; }
 
         public int Size { get; set; }
 
-        public ActiveUniformType Type { get; set; }
+        public ActiveAttribType Type { get; set; }
     }
 }

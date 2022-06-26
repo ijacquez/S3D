@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL;
 using System.Runtime.CompilerServices;
 
 namespace S3D.UI.OpenTKFramework.Utilities {

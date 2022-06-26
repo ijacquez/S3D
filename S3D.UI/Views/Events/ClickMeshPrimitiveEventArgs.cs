@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 using S3D.UI.OpenTKFramework.Types;
 using System;
 
-namespace S3D.UI.Views {
+namespace S3D.UI.Views.Events {
     public class ClickMeshPrimitiveEventArgs : EventArgs {
         public bool MultiSelect { get; set; }
 

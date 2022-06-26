@@ -5,13 +5,7 @@ using System;
 
 namespace S3D.UI.OpenTKFramework.Types {
     // Disambiguate between System.drawing.Imaging.PixelFormat
-    using OpenTK.Graphics.OpenGL4;
-
-    public enum TextureCoord {
-        S = TextureParameterName.TextureWrapS,
-        T = TextureParameterName.TextureWrapT,
-        R = TextureParameterName.TextureWrapR
-    }
+    using OpenTK.Graphics.OpenGL;
 
     public class Texture : IDisposable {
         public const SizedInternalFormat Srgb8Alpha8 = (SizedInternalFormat)All.Srgb8Alpha8;
