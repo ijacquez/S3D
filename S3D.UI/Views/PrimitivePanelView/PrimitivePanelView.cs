@@ -6,29 +6,33 @@ using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.MeshUtilities;
 using S3D.UI.OpenTKFramework.Extensions;
 using S3D.UI.OpenTKFramework.Types;
+using S3D.UI.Views.Events;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System;
-using S3D.UI.Views.Events;
 
 namespace S3D.UI.Views {
     public class PrimitivePanelView : View {
-        private MeshPrimitive _meshPrimitive;
+        private readonly FaceData _faceData;
 
-        private readonly UpdateGouraudShadingEventArgs _updateGouraudShadingEventArgs =
-            new UpdateGouraudShadingEventArgs();
+        private readonly AttributesColorCalculationModeView _attributesColorCalculationModeView;
+
+        private readonly UpdateSortTypeEventArgs _updateSortTypeEventArgs =
+            new UpdateSortTypeEventArgs();
+        private readonly UpdatePlaneTypeEventArgs _updatePlaneTypeEventArgs =
+            new UpdatePlaneTypeEventArgs();
 
         public event EventHandler<UpdateMeshPrimitiveEventArgs> UpdateMeshPrimitive;
 
-        public PrimitivePanelView() {
+        private PrimitivePanelView() {
         }
 
-        public void ShowMeshPrimitive(MeshPrimitive meshPrimitive) {
-            _meshPrimitive = meshPrimitive;
-        }
+        public PrimitivePanelView(FaceData faceData) {
+            _faceData = faceData;
 
-        public void HideMeshPrimitive() {
-            _meshPrimitive = null;
+            _attributesColorCalculationModeView = new AttributesColorCalculationModeView(faceData);
+            _attributesColorCalculationModeView.UpdateMeshPrimitive += OnUpdateMeshPrimitive;
         }
 
         protected override void OnLoad() {
@@ -40,104 +44,106 @@ namespace S3D.UI.Views {
         protected override void OnUpdateFrame() {
         }
 
-        private int _s;
-
         protected override void OnRenderFrame() {
             ImGui.ShowDemoWindow();
 
             ImGui.Begin("Primitive");
 
-            if (_meshPrimitive != null) {
-                ImGui.Text("Vertices");
+            RenderVertices();
 
-                RenderVertices();
+            ImGui.Separator();
 
-                ImGui.Separator();
-
-                ImGui.Text("Attributes");
-
-                ImGui.Text("Sorting");
-
-                RenderAttributesSorting();
-
-                ImGui.Text("Gouraud Shading");
-
-                RenderAttributesGouraudShading();
-            }
+            RenderAttributes();
 
             ImGui.End();
         }
 
+        private void OnUpdateMeshPrimitive(object sender, UpdateMeshPrimitiveEventArgs e) {
+            UpdateMeshPrimitive?.Invoke(this, e);
+        }
+
         private void RenderVertices() {
-            var vertices = _meshPrimitive.GetVertices();
+            ImGui.Text("Vertices");
 
-            for (int v = 0; v < vertices.Length; v++) {
-                var vertex = vertices[v].ToNumerics();
+            var p0 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[0]];
+            var p1 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[1]];
+            var p2 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[2]];
+            var p3 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[3]];
 
-                ImGui.InputFloat3($"v{v}", ref vertex, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
+            ImGui.Text("Type:"); ImGui.SameLine();
+
+            if (_faceData.Face.IsTriangle) {
+                ImGui.Text("Triangle");
+            } else {
+                ImGui.Text("Quad");
+            }
+
+            ImGui.InputFloat3($"v0", ref p0, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
+            ImGui.InputFloat3($"v1", ref p1, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
+            ImGui.InputFloat3($"v2", ref p2, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
+
+            if (!_faceData.Face.IsTriangle) {
+                ImGui.InputFloat3($"v3", ref p3, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
             }
         }
 
-        private void RenderAttributesSorting() {
+        private void RenderAttributes() {
+            ImGui.Text("Attributes");
+            RenderAttributesPlaneType();
+            ImGui.Separator();
+            RenderAttributesSortType();
+            ImGui.Separator();
+            RenderAttributesColorCalculationMode();
+        }
+
+        private void RenderAttributesSortType() {
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("Sorting");
+
+            int index = (int)_faceData.Face.SortType;
+
+            bool changedRadio = false;
+
             ImGui.SameLine();
             ImGui.BeginGroup();
-            ImGui.RadioButton("Before", ref _s, 0);
+            changedRadio = changedRadio || ImGui.RadioButton("Before", ref index, (int)S3DFaceAttribs.SortType.Before);
             ImGui.SameLine();
-            ImGui.RadioButton("Min", ref _s, 1);
+            changedRadio = changedRadio || ImGui.RadioButton("Min", ref index, (int)S3DFaceAttribs.SortType.Min);
             ImGui.SameLine();
-            ImGui.RadioButton("Center", ref _s, 2);
+            changedRadio = changedRadio || ImGui.RadioButton("Max", ref index, (int)S3DFaceAttribs.SortType.Max);
             ImGui.SameLine();
-            ImGui.RadioButton("Max", ref _s, 3);
+            changedRadio = changedRadio || ImGui.RadioButton("Center", ref index, (int)S3DFaceAttribs.SortType.Center);
             ImGui.EndGroup();
-        }
 
-        private void RenderAttributesGouraudShading() {
-            bool isGouraudShaded = _meshPrimitive.Flags.HasFlag(MeshPrimitiveFlags.GouraudShaded);
+            if (changedRadio) {
+                _updateSortTypeEventArgs.Type = (S3DFaceAttribs.SortType)index;
 
-            string checkboxLabel = (isGouraudShaded) ? "Disable" : "Enable";
-            bool changedCheckbox = ImGui.Checkbox(checkboxLabel, ref isGouraudShaded);
-
-            _updateGouraudShadingEventArgs.IsEnabled = isGouraudShaded;
-            _updateGouraudShadingEventArgs.Colors = null;
-
-            if (isGouraudShaded) {
-                var outputColors = _meshPrimitive.GetGouraudShadingTable();
-                var inputColors = new System.Numerics.Vector3[outputColors.Length];
-
-                bool changedColors = false;
-
-                for (int i = 0; i < outputColors.Length; i++) {
-                    inputColors[i] = new System.Numerics.Vector3(outputColors[i].R,
-                                                                 outputColors[i].G,
-                                                                 outputColors[i].B);
-
-                    if (ImGui.ColorEdit3($"c{i}", ref inputColors[i], ImGuiColorEditFlags.Uint8)) {
-                        changedColors = true;
-
-                        outputColors[i] = new Color4(MathHelper.Clamp(inputColors[i].X, 0.0f, 1.0f),
-                                                     MathHelper.Clamp(inputColors[i].Y, 0.0f, 1.0f),
-                                                     MathHelper.Clamp(inputColors[i].Z, 0.0f, 1.0f),
-                                                     1.0f);
-                    }
-                }
-
-                // If gouraud shading is enabled for the first time, or any
-                // field is changed
-                if (changedCheckbox || changedColors) {
-                    _updateGouraudShadingEventArgs.Colors = outputColors;
-
-                    InvokeUpdateGouraudShadingEvent();
-                }
-            } else if (changedCheckbox) {
-                // If gouraud shading is disabled
-                InvokeUpdateGouraudShadingEvent();
+                InvokeUpdateSortTypeEvent();
             }
         }
 
-        private void InvokeUpdateGouraudShadingEvent() {
-            _updateGouraudShadingEventArgs.MeshPrimitive = _meshPrimitive;
+        private void RenderAttributesColorCalculationMode() {
+            _attributesColorCalculationModeView.RenderFrame();
+        }
 
-            UpdateMeshPrimitive?.Invoke(this, _updateGouraudShadingEventArgs);
+        private void RenderAttributesPlaneType() {
+            bool isCulling = (_faceData.Face.PlaneType == S3DFaceAttribs.PlaneType.Single);
+            bool changedCheckbox = ImGui.Checkbox("Backface culling", ref isCulling);
+
+            if (changedCheckbox) {
+                _updatePlaneTypeEventArgs.Type =
+                    (isCulling) ? S3DFaceAttribs.PlaneType.Single : S3DFaceAttribs.PlaneType.Dual;
+
+                InvokeUpdatePlaneTypeEvent();
+            }
+        }
+
+        private void InvokeUpdateSortTypeEvent() {
+            UpdateMeshPrimitive?.Invoke(this, _updateSortTypeEventArgs);
+        }
+
+        private void InvokeUpdatePlaneTypeEvent() {
+            UpdateMeshPrimitive?.Invoke(this, _updatePlaneTypeEventArgs);
         }
     }
 }

@@ -52,5 +52,8 @@ namespace S3D.FileFormats {
         [JsonProperty]
         [JsonConverter(typeof(StringEnumConverter))]
         public S3DFaceAttribs.TextureFlipFlags TextureFlipFlags { get; set; }
+
+        [JsonIgnore]
+        public bool IsTriangle => (Indices[0] == Indices[3]);
     }
 }

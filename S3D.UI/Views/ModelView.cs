@@ -1,6 +1,7 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using S3D.FileFormats;
 using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.OpenTKFramework.Types;
 using S3D.UI.Views.Events;
@@ -58,6 +59,8 @@ namespace S3D.UI.Views {
             if (mouseState.IsButtonPressed(MouseButton.Button1)) {
                 Vector2i mousePoint = new Vector2i((int)mouseState.X, (int)mouseState.Y);
 
+                // XXX: Is it right to have Object? Should "Model" just be moved out from OpenTK?
+                S3DObject s3dObject = _model.Objects[0];
                 Mesh mesh = _model.Meshes[0];
 
                 if (Window.Camera.CastRay(mousePoint, mesh, out RaycastHitInfo hitInfo)) {
@@ -67,8 +70,8 @@ namespace S3D.UI.Views {
                         (Window.Input.KeyboardState.IsKeyDown(Keys.LeftShift) ||
                          Window.Input.KeyboardState.IsKeyDown(Keys.RightShift));
 
+                    _clickMeshPrimitiveEventArgs.Object = s3dObject;
                     _clickMeshPrimitiveEventArgs.Mesh = mesh;
-                    _clickMeshPrimitiveEventArgs.MeshPrimitive = mesh.Primitives[index];
                     _clickMeshPrimitiveEventArgs.Index = index;
                     _clickMeshPrimitiveEventArgs.Point = hitInfo.Point;
 

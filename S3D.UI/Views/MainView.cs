@@ -1,5 +1,6 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using S3D.FileFormats;
 using S3D.UI.MathUtilities.Raycasting;
 using S3D.UI.MeshUtilities;
 using S3D.UI.OpenTKFramework.Types;
@@ -9,16 +10,22 @@ using System;
 namespace S3D.UI.Views {
     public class MainView : View {
         // private readonly FileDialogView _openFileDialogView = new FileDialogView();
-        private readonly MainMenuBarView _mainMenuBarView = new MainMenuBarView();
-        private readonly ModelView _modelView = new ModelView();
-        private readonly PrimitivePanelView _primitivePanelView = new PrimitivePanelView();
+        private readonly MainMenuBarView _mainMenuBarView;
+        private readonly ModelView _modelView;
+        private readonly PrimitivePanelView _primitivePanelView;
 
         // private MeshWireRender _modelWireRender;
 
         private readonly FlyCamera _flyCamera = new FlyCamera();
         private int _lastIndexClicked;
 
-        public Action OpenFile { get; set; }
+        private readonly FaceData _faceData = new FaceData();
+
+        public MainView() {
+            _mainMenuBarView = new MainMenuBarView();
+            _modelView = new ModelView();
+            _primitivePanelView = new PrimitivePanelView(_faceData);
+        }
 
         protected override void OnLoad() {
             _mainMenuBarView.Load();
@@ -27,6 +34,8 @@ namespace S3D.UI.Views {
             _primitivePanelView.UpdateMeshPrimitive += OnUpdateMeshPrimitive;
             _primitivePanelView.Load();
 
+            _primitivePanelView.ToggleVisibility(false);
+
             _modelView.ClickMeshPrimitive -= OnClickMeshPrimitive;
             _modelView.ClickMeshPrimitive += OnClickMeshPrimitive;
             _modelView.Load();
@@ -34,61 +43,107 @@ namespace S3D.UI.Views {
             ProjectManagement.ProjectSettings projectSettings =
                 ProjectManagement.ProjectManager.Open("mgl1_settings.json");
 
+            var s3dObject = projectSettings.Objects[0];
+
+            // XXX: Fix
             // Mesh wireMesh = S3DWireMeshGenerator.Generate(projectSettings.Objects[0]);
+
             Model model = new Model();
-            Mesh mesh = S3DMeshGenerator.Generate(projectSettings.Objects[0]);
+            Mesh mesh = S3DMeshGenerator.Generate(s3dObject);
+
+            model.Objects = new S3DObject[] {
+                s3dObject
+            };
 
             model.Meshes = new Mesh[] {
                 mesh
             };
 
-            // XXX: Remove
-            foreach (var meshPrimitive in mesh.Primitives) {
-                meshPrimitive.Flags |= MeshPrimitiveFlags.Textured;
-            }
-
             _modelView.LoadModel(model);
 
-            ProjectManagement.ProjectManager.Close(projectSettings);
+            // ProjectManagement.ProjectManager.Close(projectSettings);
 
+            // XXX: Fix
             // _modelWireRender = new MeshWireRender(wireMesh);
-
-            // mesh.Primitives[55].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
-            // mesh.Primitives[55].Flags |= MeshPrimitiveFlags.GouraudShaded;
-
-            // mesh.Primitives[53].SetGouraudShading(Color4.Red, Color4.Green, Color4.Blue, Color4.White);
-            // mesh.Primitives[53].Flags |= MeshPrimitiveFlags.GouraudShaded;
         }
 
         private void OnUpdateMeshPrimitive(object sender, UpdateMeshPrimitiveEventArgs e) {
             switch (e.UpdateType) {
-            case MeshPrimitiveUpdateType.GouraudShading:
-                OnUpdateGouraudShading(e);
-                break;
+                case MeshPrimitiveUpdateType.SortType:
+                    OnUpdateSortType(e);
+                    break;
+                case MeshPrimitiveUpdateType.PlaneType:
+                    OnUpdatePlaneType(e);
+                    break;
+                case MeshPrimitiveUpdateType.ColorCalculationMode:
+                    OnUpdateColorCalculationMode(e);
+                    break;
+                case MeshPrimitiveUpdateType.GouraudShading:
+                    OnUpdateGouraudShading(e);
+                    break;
             }
         }
 
-        private static void OnUpdateGouraudShading(UpdateMeshPrimitiveEventArgs e) {
-            var gouraudShading = (UpdateGouraudShadingEventArgs)e;
+        private void OnUpdateSortType(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdateSortTypeEventArgs)e;
 
-            Console.WriteLine($"{gouraudShading.IsEnabled}");
+            _faceData.Face.SortType = eventArgs.Type;
+        }
 
-            if (gouraudShading.IsEnabled) {
-                e.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+        private void OnUpdatePlaneType(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdatePlaneTypeEventArgs)e;
 
-                if (e.MeshPrimitive.Flags.HasFlag(MeshPrimitiveFlags.Quadrangle)) {
-                    e.MeshPrimitive.SetGouraudShading(gouraudShading.Colors[0],
-                                                      gouraudShading.Colors[1],
-                                                      gouraudShading.Colors[2],
-                                                      gouraudShading.Colors[3]);
+            _faceData.Face.PlaneType = eventArgs.Type;
+        }
+
+        private void OnUpdateColorCalculationMode(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdateColorCalculationModeEventArgs)e;
+
+            _faceData.Face.ColorCalculationMode = eventArgs.Mode;
+        }
+
+        private void OnUpdateGouraudShading(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdateGouraudShadingEventArgs)e;
+
+            if (eventArgs.IsEnabled) {
+                _faceData.Face.FeatureFlags |= FileFormats.S3DFaceAttribs.FeatureFlags.UseGouraudShading;
+
+                if (_faceData.Face.GouraudShadingNumber < 0) {
+                    // XXX: Allocating should also free to reuse unused numbers!
+                    _faceData.Face.GouraudShadingNumber =
+                        _faceData.Object.AllocateGouraudShadingNumber();
+                }
+
+                _faceData.Face.GouraudShadingColors[0] = eventArgs.Colors[0];
+                _faceData.Face.GouraudShadingColors[1] = eventArgs.Colors[1];
+                _faceData.Face.GouraudShadingColors[2] = eventArgs.Colors[2];
+                _faceData.Face.GouraudShadingColors[3] = eventArgs.Colors[3];
+
+                // XXX: This should not be in the [future] controller. Instead,
+                //      it should be before (or after?) the controller handles
+                //      this event
+                _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+
+                if (_faceData.MeshPrimitive.Flags.HasFlag(MeshPrimitiveFlags.Quadrangle)) {
+                    _faceData.MeshPrimitive.SetGouraudShading(eventArgs.Colors[0],
+                                                              eventArgs.Colors[1],
+                                                              eventArgs.Colors[2],
+                                                              eventArgs.Colors[3]);
                 } else {
-                    e.MeshPrimitive.SetGouraudShading(gouraudShading.Colors[0],
-                                                      gouraudShading.Colors[1],
-                                                      gouraudShading.Colors[2]);
+                    _faceData.MeshPrimitive.SetGouraudShading(eventArgs.Colors[0],
+                                                              eventArgs.Colors[1],
+                                                              eventArgs.Colors[2]);
                 }
             } else {
-                e.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.GouraudShaded;
+                _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.GouraudShaded;
+                _faceData.Face.FeatureFlags &= ~FileFormats.S3DFaceAttribs.FeatureFlags.UseGouraudShading;
+
+                // XXX: Free properly
+                _faceData.Face.GouraudShadingNumber = -1;
             }
+
+            // XXX: WE NEED THIS!!!
+            // s3dFace.Mode = S3DFaceAttribs.Mode.GouraudShading;
         }
 
         private void OnClickMeshPrimitive(object sender, ClickMeshPrimitiveEventArgs e) {
@@ -96,14 +151,12 @@ namespace S3D.UI.Views {
                 return;
             }
 
-            var meshPrimitive = e.Mesh.Primitives[e.Index];
-
             if (_lastIndexClicked >= 0) {
-                var lastMeshPrimitive = e.Mesh.Primitives[_lastIndexClicked];
+                _faceData.SetData(e.Object, e.Mesh, _lastIndexClicked);
 
-                lastMeshPrimitive.Flags &= ~MeshPrimitiveFlags.Selected;
+                _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.Selected;
 
-                _primitivePanelView.HideMeshPrimitive();
+                _primitivePanelView.ToggleVisibility(false);
             }
 
             // Select if not previously selected. Otherwise, deselect
@@ -112,9 +165,11 @@ namespace S3D.UI.Views {
             } else {
                 _lastIndexClicked = e.Index;
 
-                meshPrimitive.Flags |= MeshPrimitiveFlags.Selected;
+                _faceData.SetData(e.Object, e.Mesh, e.Index);
 
-                _primitivePanelView.ShowMeshPrimitive(meshPrimitive);
+                _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.Selected;
+
+                _primitivePanelView.ToggleVisibility(true);
             }
         }
 
@@ -137,9 +192,6 @@ namespace S3D.UI.Views {
             _primitivePanelView.RenderFrame();
 
             // _modelWireRender.Render();
-        }
-
-        private void MenuFileOpen() {
         }
     }
 }

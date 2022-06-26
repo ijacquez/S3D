@@ -33,9 +33,6 @@ namespace S3D.UI.MeshUtilities {
             mesh.Texture = texture;
 
             foreach (S3DFace s3dFace in s3dObject.Faces) {
-                uint firstIndex = s3dFace.Indices[0];
-                uint lastIndex = s3dFace.Indices[3];
-
                 MeshPrimitive meshPrimitive;
 
                 var p0 = TransformVertex(objectVertices[(int)s3dFace.Indices[0]]);
@@ -48,8 +45,7 @@ namespace S3D.UI.MeshUtilities {
                 var u2 = TransformTexcoord(s3dFace.Picture.Texture.Vertices[2]);
                 var u3 = TransformTexcoord(s3dFace.Picture.Texture.Vertices[3]);
 
-                // First and last will be equal if it's a triangle
-                if (firstIndex == lastIndex) {
+                if (s3dFace.IsTriangle) {
                     meshPrimitive = MeshPrimitive.CreateTriangle();
 
                     meshPrimitive.SetVertices(p0, p1, p2);
@@ -59,6 +55,14 @@ namespace S3D.UI.MeshUtilities {
 
                     meshPrimitive.SetVertices(p0, p1, p2, p3);
                     meshPrimitive.SetTexcoords(u0, u1, u2, u3);
+                }
+
+                if (s3dFace.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseTexture)) {
+                    meshPrimitive.Flags |= MeshPrimitiveFlags.Textured;
+                }
+
+                if (s3dFace.FeatureFlags.HasFlag(S3DFaceAttribs.FeatureFlags.UseGouraudShading)) {
+                    meshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
                 }
 
                 meshPrimitive.CalculateNormal();
