@@ -120,6 +120,17 @@ namespace S3D.UI.OpenTKFramework.Types {
             }
         }
 
+        public void SetVector2(string uniform, Vector2 value) {
+            if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
+                System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
+            } else {
+                Bind();
+
+                GL.Uniform2(location, value.X, value.Y);
+                DebugUtility.CheckGLError($"GL.Uniform1({Name}, {location})");
+            }
+        }
+
         public void SetMatrix4(string uniform, bool transpose, Matrix4 transform) {
             if (!_uniformToLocation.TryGetValue(uniform, out int location)) {
                 System.Console.WriteLine($"The uniform '{uniform}' does not exist in the shader '{Name}'!");

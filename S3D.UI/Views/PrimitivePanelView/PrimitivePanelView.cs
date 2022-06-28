@@ -18,10 +18,14 @@ namespace S3D.UI.Views {
 
         private readonly AttributesColorCalculationModeView _attributesColorCalculationModeView;
 
+        private readonly UpdatePrimitiveTypeEventArgs _updatePrimitiveTypeEventArgs =
+            new UpdatePrimitiveTypeEventArgs();
         private readonly UpdateSortTypeEventArgs _updateSortTypeEventArgs =
             new UpdateSortTypeEventArgs();
         private readonly UpdatePlaneTypeEventArgs _updatePlaneTypeEventArgs =
             new UpdatePlaneTypeEventArgs();
+        private readonly UpdateRenderFlagsEventArgs _updateRenderFlagsEventArgs =
+            new UpdateRenderFlagsEventArgs();
 
         public event EventHandler<UpdateMeshPrimitiveEventArgs> UpdateMeshPrimitive;
 
@@ -49,11 +53,17 @@ namespace S3D.UI.Views {
 
             ImGui.Begin("Primitive");
 
+            RenderPrimitiveType();
+
             RenderVertices();
 
             ImGui.Separator();
 
             RenderAttributes();
+
+            ImGui.Separator();
+
+            RenderOptions();
 
             ImGui.End();
         }
@@ -62,21 +72,42 @@ namespace S3D.UI.Views {
             UpdateMeshPrimitive?.Invoke(this, e);
         }
 
+        private void RenderPrimitiveType() {
+            ImGui.Text("Primitive Type");
+
+            int index = (int)_faceData.Face.PrimitiveType;
+
+            bool changedRadio = false;
+
+            changedRadio = changedRadio || ImGui.RadioButton("Polygon", ref index, (int)S3DFaceAttribs.PrimitiveType.Polygon);
+            changedRadio = changedRadio || ImGui.RadioButton("Polyline", ref index, (int)S3DFaceAttribs.PrimitiveType.Polyline);
+            changedRadio = changedRadio || ImGui.RadioButton("Distorted Sprite", ref index, (int)S3DFaceAttribs.PrimitiveType.DistortedSprite);
+            changedRadio = changedRadio || ImGui.RadioButton("Line", ref index, (int)S3DFaceAttribs.PrimitiveType.Line);
+
+            if (changedRadio) {
+                _updatePrimitiveTypeEventArgs.Type = (S3DFaceAttribs.PrimitiveType)index;
+
+                InvokeUpdatePrimitiveTypeEvent();
+            }
+        }
+
         private void RenderVertices() {
+            if (_faceData.Face.IsTriangle) {
+                ImGui.Text("Triangle");
+            } else if (_faceData.Face.IsLine) {
+                ImGui.Text("Line");
+            } else {
+                ImGui.Text("Quad");
+            }
+
+            ImGui.Spacing();
+
             ImGui.Text("Vertices");
 
             var p0 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[0]];
             var p1 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[1]];
             var p2 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[2]];
             var p3 = _faceData.Object.Vertices[(int)_faceData.Face.Indices[3]];
-
-            ImGui.Text("Type:"); ImGui.SameLine();
-
-            if (_faceData.Face.IsTriangle) {
-                ImGui.Text("Triangle");
-            } else {
-                ImGui.Text("Quad");
-            }
 
             ImGui.InputFloat3($"v0", ref p0, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
             ImGui.InputFloat3($"v1", ref p1, format: "%.5f", ImGuiInputTextFlags.ReadOnly);
@@ -94,6 +125,34 @@ namespace S3D.UI.Views {
             RenderAttributesSortType();
             ImGui.Separator();
             RenderAttributesColorCalculationMode();
+        }
+
+        private void RenderOptions() {
+            ImGui.Text("Render Options");
+
+            bool isMeshed = _faceData.Face.RenderFlags.HasFlag(S3DFaceAttribs.RenderFlags.Mesh);
+
+            S3DFaceAttribs.RenderFlags renderFlags = _faceData.Face.RenderFlags;
+
+            bool changed = false;
+
+            ImGui.BeginGroup();
+            if (ImGui.Checkbox("Mesh", ref isMeshed)) {
+                changed = true;
+
+                if (isMeshed) {
+                    renderFlags |= S3DFaceAttribs.RenderFlags.Mesh;
+                } else {
+                    renderFlags &= ~S3DFaceAttribs.RenderFlags.Mesh;
+                }
+            }
+            ImGui.EndGroup();
+
+            if (changed) {
+                _updateRenderFlagsEventArgs.Flags = renderFlags;
+
+                InvokeUpdateRenderFlagsEvent();
+            }
         }
 
         private void RenderAttributesSortType() {
@@ -138,12 +197,20 @@ namespace S3D.UI.Views {
             }
         }
 
+        private void InvokeUpdatePrimitiveTypeEvent() {
+            UpdateMeshPrimitive?.Invoke(this, _updatePrimitiveTypeEventArgs);
+        }
+
         private void InvokeUpdateSortTypeEvent() {
             UpdateMeshPrimitive?.Invoke(this, _updateSortTypeEventArgs);
         }
 
         private void InvokeUpdatePlaneTypeEvent() {
             UpdateMeshPrimitive?.Invoke(this, _updatePlaneTypeEventArgs);
+        }
+
+        private void InvokeUpdateRenderFlagsEvent() {
+            UpdateMeshPrimitive?.Invoke(this, _updateRenderFlagsEventArgs);
         }
     }
 }

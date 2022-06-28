@@ -69,17 +69,45 @@ namespace S3D.UI.Views {
 
         private void OnUpdateMeshPrimitive(object sender, UpdateMeshPrimitiveEventArgs e) {
             switch (e.UpdateType) {
+                case MeshPrimitiveUpdateType.PrimitiveType:
+                    OnUpdatePrimitiveType(e);
+                    break;
                 case MeshPrimitiveUpdateType.SortType:
                     OnUpdateSortType(e);
                     break;
                 case MeshPrimitiveUpdateType.PlaneType:
                     OnUpdatePlaneType(e);
                     break;
+                case MeshPrimitiveUpdateType.RenderFlags:
+                    OnUpdateRenderFlags(e);
+                    break;
                 case MeshPrimitiveUpdateType.ColorCalculationMode:
                     OnUpdateColorCalculationMode(e);
                     break;
                 case MeshPrimitiveUpdateType.GouraudShading:
                     OnUpdateGouraudShading(e);
+                    break;
+            }
+        }
+
+        private void OnUpdatePrimitiveType(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdatePrimitiveTypeEventArgs)e;
+
+            _faceData.Face.PrimitiveType = eventArgs.Type;
+
+            switch (_faceData.Face.PrimitiveType) {
+                case S3DFaceAttribs.PrimitiveType.DistortedSprite:
+                    _faceData.Face.FeatureFlags |= S3DFaceAttribs.FeatureFlags.UseTexture;
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.Textured;
+                    break;
+                case S3DFaceAttribs.PrimitiveType.Polygon:
+                    _faceData.Face.FeatureFlags &= ~S3DFaceAttribs.FeatureFlags.UseTexture;
+                    _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.Textured;
+                    break;
+                case S3DFaceAttribs.PrimitiveType.Polyline:
+                    _faceData.Face.FeatureFlags &= ~S3DFaceAttribs.FeatureFlags.UseTexture;
+                    _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.Textured;
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.Wired;
                     break;
             }
         }
@@ -96,14 +124,56 @@ namespace S3D.UI.Views {
             _faceData.Face.PlaneType = eventArgs.Type;
         }
 
+        private void OnUpdateRenderFlags(UpdateMeshPrimitiveEventArgs e) {
+            var eventArgs = (UpdateRenderFlagsEventArgs)e;
+
+            _faceData.Face.RenderFlags = eventArgs.Flags;
+
+            if (_faceData.Face.RenderFlags.HasFlag(S3DFaceAttribs.RenderFlags.Mesh)) {
+                _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.Meshed;
+            } else {
+                _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.Meshed;
+            }
+        }
+
         private void OnUpdateColorCalculationMode(UpdateMeshPrimitiveEventArgs e) {
             var eventArgs = (UpdateColorCalculationModeEventArgs)e;
 
             _faceData.Face.ColorCalculationMode = eventArgs.Mode;
+
+            _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.GouraudShaded;
+            _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.HalfLuminance;
+            _faceData.MeshPrimitive.Flags &= ~MeshPrimitiveFlags.HalfTransparent;
+
+            switch (_faceData.Face.ColorCalculationMode) {
+                case S3DFaceAttribs.ColorCalculationMode.Replace:
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.Shadow:
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.HalfLuminance:
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.HalfLuminance;
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.HalfTransparent:
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.HalfTransparent;
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.GouraudShading:
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.GouraudShadingAndHalfLuminance:
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.HalfLuminance;
+                    break;
+                case S3DFaceAttribs.ColorCalculationMode.GouraudShadingAndHalfTransparent:
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.GouraudShaded;
+                    _faceData.MeshPrimitive.Flags |= MeshPrimitiveFlags.HalfTransparent;
+                    break;
+            }
         }
 
         private void OnUpdateGouraudShading(UpdateMeshPrimitiveEventArgs e) {
             var eventArgs = (UpdateGouraudShadingEventArgs)e;
+
+            Console.WriteLine($"{_faceData.Face.FeatureFlags}");
 
             if (eventArgs.IsEnabled) {
                 _faceData.Face.FeatureFlags |= FileFormats.S3DFaceAttribs.FeatureFlags.UseGouraudShading;

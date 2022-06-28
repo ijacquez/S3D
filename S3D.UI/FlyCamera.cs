@@ -5,7 +5,7 @@ using S3D.UI.OpenTKFramework.Types;
 namespace S3D.UI {
     public class FlyCamera {
         // XXX: Move these to a S3DSettings file
-        private const float CameraSpeed           = 1.5f;
+        private const float CameraSpeed           = 100.0f;
         private const float PitchMouseSensitivity = 20.0f;
         private const float YawMouseSensitivity   = 20.0f;
 

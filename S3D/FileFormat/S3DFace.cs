@@ -55,5 +55,8 @@ namespace S3D.FileFormats {
 
         [JsonIgnore]
         public bool IsTriangle => (Indices[0] == Indices[3]);
+
+        [JsonIgnore]
+        public bool IsLine => false;
     }
 }

@@ -12,6 +12,7 @@ namespace S3D.UI.OpenTKFramework.Types {
         private const string _FlagsAttribName             = "in_flags";
 
         private const string _ElapsedTimeUniformName      = "time";
+        private const string _WindowSizeUniformName       = "window_size";
         private const string _ModelViewMatrixUniformName  = "modelview_matrix";
         private const string _ProjectionMatrixUniformName = "projection_matrix";
 
@@ -175,11 +176,12 @@ namespace S3D.UI.OpenTKFramework.Types {
                 var projectionMatrix = camera.GetProjectionMatrix();
 
                 Shader.SetFloat(_ElapsedTimeUniformName, Time.ElapsedTime);
+                Shader.SetVector2(_WindowSizeUniformName, Window.ClientSize);
                 Shader.SetMatrix4(_ModelViewMatrixUniformName, transpose: false, modelViewMatrix);
                 Shader.SetMatrix4(_ProjectionMatrixUniformName, transpose: false, projectionMatrix);
             }
 
-            GL.Enable(EnableCap.Blend);
+            GL.Disable(EnableCap.Blend);
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.RasterizerDiscard);
@@ -196,6 +198,8 @@ namespace S3D.UI.OpenTKFramework.Types {
             UploadGSColorBuffer();
             UploadBaseColorBuffer();
             UploadFlagsBuffer();
+
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             GL.DrawArrays(PrimitiveType.Triangles, first: 0, (_vertexTexcoordBuffer.Length / 5));
             DebugUtility.CheckGLError("Render");

@@ -7,11 +7,15 @@ namespace S3D.UI.OpenTKFramework.Types {
     /// </summary>
     [Flags]
     public enum MeshPrimitiveFlags : uint {
-        None           = 0,
-        Quadrangle     = 1U << 0,
-        Textured       = 1U << 3,
-        GouraudShaded  = 1U << 4,
+        None            = 0,
+        Quadrangle      = 1U << 0,
+        Textured        = 1U << 1,
+        Wired           = 1U << 2,
+        GouraudShaded   = 1U << 3,
+        HalfLuminance   = 1U << 4,
+        HalfTransparent = 1U << 5,
+        Meshed          = 1U << 6,
 
-        Selected      = 1U << 31
+        Selected        = 1U << 31
     }
 }
